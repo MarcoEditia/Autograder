@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Java build output
+classes/
+*.class
+
+# IDE metadata
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Local generated files
+*.csv
+*.pdf
