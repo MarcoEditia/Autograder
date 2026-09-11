@@ -20,7 +20,7 @@ public class Config {
 
         try (InputStream is = Config.class.getResourceAsStream(configPropertiesFileName)){
             if(is == null){
-                throw new FileNotFoundException("Could not find " + configPropertiesFileName + "in autograder.config");
+                throw new FileNotFoundException("Could not find " + configPropertiesFileName + " in autograder.config");
             }
             configProperties.load(is);
         
@@ -42,5 +42,4 @@ public class Config {
 
         return studentSubmissionPath;
     }
-    
 }
