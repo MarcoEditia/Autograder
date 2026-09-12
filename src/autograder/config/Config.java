@@ -7,17 +7,15 @@ import java.nio.file.Path;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-public class Config {
+public final class Config {
+    private static final String CONFIG_FILE = "config.properties";
+
     private final Path testerFilesPath;
     private final Path studentSubmissionPath;
     private final Path cleanStudentSubmissionPath;
 
     public Config() {
-        this("config.properties");
-    }
-
-    public Config(String configPropertiesFileName) {
-        Properties configProperties = loadProperties(configPropertiesFileName);
+        Properties configProperties = loadProperties(CONFIG_FILE);
 
         this.testerFilesPath = getPath(configProperties, "TESTER_FILES_PATH");
         this.studentSubmissionPath = getPath(configProperties, "STUDENT_SUBMISSION_PATH");
