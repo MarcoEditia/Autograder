@@ -7,3 +7,5 @@ then
 ```zsh
 ./run.sh 
 ```
+
+read notes.md
