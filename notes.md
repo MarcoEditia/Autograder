@@ -45,42 +45,60 @@
 # Workflow: Unzip -> Validate structure -> Score Calculation -> Fill Scoresheet | 10 Submission at a time |
 
 ``` txt
-src/
-└── autograder/
-    ├── Main.java                             // Minimal bootstrap entry point only
-    │
+└── autograder-project/
+├── compile.sh
+├── run.sh
+├── compile.bat
+├── run.bat
+├── config.properties
+├── README.md
+├── GX-TY.pptx
+├── classes/
+├── lib/
+├── media/
+└── src/
+    ├── Main.java
+    ├── analytics/
+    │   └── PlagiarismEngine.java
     ├── config/
-    │   ├── GradingConfig.java                // Loads key-values from external properties
-    │   └── config.properties                 // External config file (timeouts, paths, weights)
-    │
-    ├── controller/
-    │   └── GradingOrchestrator.java          // Coordinates pipeline flow between model and view
-    │
-    ├── model/                                // Pure entities & value objects
-    │   ├── Submission.java                   // Student ID, original path, sanitized path
-    │   ├── QuestionResult.java               // Points earned, stdout, compiler diagnostics
-    │   ├── StudentGrade.java                 // Final total score, breakdown per question
-    │   ├── Anomaly.java                      // Anomaly record (type, severity, description)
-    │   └── AnomalyType.java                  // ENUM: UNRENAMED_FOLDER, MISSING_FILE, TIMEOUT, etc.
-    │
+    │   └── ConfigLoader.java
+    ├── execution/
+    │   ├── Compiler.java
+    │   ├── ProcessRunner.java
+    │   └── TestInjector.java
+    ├── ingestion/
+    │   └── ZipService.java
+    ├── io/
+    │   └── CsvWriter.java
+    ├── model/
+    │   ├── Anomaly.java
+    │   ├── AnomalyType.java
+    │   ├── FinalGrade.java
+    │   ├── PlagiarismResult.java
+    │   ├── QuestionScore.java
+    │   └── Submission.java
     ├── pipeline/
-    │   ├── ingestion/
-    │   │   ├── ZipService.java               // Safe archive unzipping
-    │   │   └── SubmissionSanitizer.java      // Folder hierarchy restructuring & header repair
-    │   ├── execution/
-    │   │   ├── ProcessRunner.java            // Low-level ProcessBuilder & timeout enforcement
-    │   │   ├── JavaCompilerService.java      // javac execution & compile error capture
-    │   │   └── TestRunnerService.java        // Injects tester files & executes java processes
-    │   ├── scoring/
-    │   │   └── RubricCalculator.java         // Computes marks based on exit code or stdout
-    │   └── reporting/
-    │       ├── CsvReportExporter.java        // Writes final scoresheet CSV
-    │       └── AnomalyReportExporter.java    // Writes detailed anomaly/audit log (Bonus)
-    │
-    ├── ui/                                   // View layer (Console or GUI)
-    │   ├── View.java                         // Interface for user feedback
-    │   └── ConsoleView.java                  // Progress bar, terminal alerts, status tables
-    │
-    └── util/
-        └── FileUtils.java                    // Pure filesystem path & file manipulation helpers
+    │   └── GradingPipeline.java
+    ├── reporting/
+    │   └── HtmlAnomalyBuilder.java
+    ├── scoring/
+    │   └── Evaluator.java
+    ├── ui/
+    │   ├── ConsoleCLI.java
+    │   └── InputValidator.java
+    └── validation/
+        ├── Sanitizer.java
+        └── Validator.java
 ```
+
+PROGRAM FLOW
+Initialization: Member 1's Main starts the app. ConfigLoader reads config.properties into memory.
+Ingestion: Member 1's GradingPipeline calls Member 2's ZipService.unzip(), returning raw file paths.
+Validation: Paths are passed to Member 2's Validator, returning a list of Submission objects containing attached Anomaly logs for structural errors.
+Sanitization: Broken Submission objects are routed to Member 2's Sanitizer, which auto-fixes directories and missing headers.
+Preparation: Fixed Submission objects are sent to Member 3's TestInjector to receive tester files, then passed to Compiler for bytecode generation.
+Execution: Compiled files go to Member 3's ProcessRunner, which captures stdout and safely terminates timeouts.
+Evaluation: Raw stdout is handed to Member 4's Evaluator to generate QuestionScore objects based on passed test cases.
+Analytics: All source code is passed to Member 4's PlagiarismEngine to identify heavily duplicated logic.
+Export: Scores and anomalies are passed to Member 5's CsvWriter for scoresheet.csv and HtmlAnomalyBuilder for the bonus report.
+UI Wrapping: Throughout steps 1–9, Member 6's ConsoleCLI receives status updates from GradingPipeline and renders clean progress indicators to the user without exposing internal logic.
