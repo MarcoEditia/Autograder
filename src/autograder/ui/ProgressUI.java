@@ -31,7 +31,6 @@ public class ProgressUI {
     private static JLabel progressText;
     private static JLabel errorText;
     private static GridBagConstraints gbc;
-    private static int barMaxValue = 100;
 
     public static void main(String[] args) {
         // main method for testing only
@@ -117,7 +116,7 @@ public class ProgressUI {
     }
 
     public static void addBarValue(){
-        if(bar.getValue() < barMaxValue){
+        if(bar.getValue() < bar.getMaximum()){
             bar.setValue(bar.getValue() + 1);
         }
     }
@@ -140,8 +139,7 @@ public class ProgressUI {
 
     public static void onUnzip(int numOfZipFiles){
         progressText.setText("Unzipping files...");
-        barMaxValue = numOfZipFiles;
-        bar.setMaximum(barMaxValue);
+        bar.setMaximum(numOfZipFiles);
     }
 
     public static void onUnzipSuccess(){
@@ -150,43 +148,51 @@ public class ProgressUI {
 
     public static void onCopyTestFiles(int numOfFiles){
         progressText.setText("Copying Tester files...");
-        barMaxValue = numOfFiles;
-        bar.setMaximum(barMaxValue);
+        bar.setMaximum(numOfFiles);
     }
 
     public static void onCopyTestFilesSuccess(){
+        progressText.setText("Copying Tester files completed");
         sideTextCopy.setForeground(Color.GREEN);
     }
 
-    public static void onEvaluate(){
+    public static void onEvaluate(int numOfFiles){
         progressText.setText("Marking student submissions...");
-        bar.setMaximum(0);
+        bar.setMaximum(numOfFiles);
     }
 
     public static void onEvaluateSuccess(){
+        progressText.setText("Marking submissions completed");
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
-    public static void onPlagiarismCheck(){
+    public static void onPlagiarismCheck(int numOfFiles){
         progressText.setText("Plagiarism check...");
-        bar.setMaximum(0);
+        bar.setMaximum(numOfFiles);
     }
 
     public static void onPlagiarismSuccess(){
+        progressText.setText("Plagiarism check completed");
         sideTextPlagiarism.setForeground(Color.GREEN);
     }
 
     public static void onGenerateReport(){
         progressText.setText("Generating report...");
-        bar.setMaximum(0);
+        bar.setMaximum(100);
     }
 
     public static void onGenrateReportSuccess(){
+        completeBar();
+        progressText.setText("Generating report completed");
         sideTextReport.setForeground(Color.GREEN);
     }
 
     public static void onProgramCompleted(){
         progressText.setText("Program completed. Please refer to Report and CSV for more details.");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    public static void onProgramError(){
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }
