@@ -102,3 +102,4 @@ Evaluation: Raw stdout is handed to Member 4's Evaluator to generate QuestionSco
 Analytics: All source code is passed to Member 4's PlagiarismEngine to identify heavily duplicated logic.
 Export: Scores and anomalies are passed to Member 5's CsvWriter for scoresheet.csv and HtmlAnomalyBuilder for the bonus report.
 UI Wrapping: Throughout steps 1–9, Member 6's ConsoleCLI receives status updates from GradingPipeline and renders clean progress indicators to the user without exposing internal logic.
+
