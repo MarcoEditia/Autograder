@@ -1,11 +1,10 @@
 package autograder.config;
 
-import java.util.Properties;
-import java.io.InputStream;
-import java.nio.file.Path;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Properties;
 
 public final class Config {
     private static final String CONFIG_FILE = "config.properties";
