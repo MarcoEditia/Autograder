@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import model.Submission;
+import model.ProcessResult;
 
 public class Compiler {
     public CompilationResult compile(Submission submission) {
@@ -45,7 +46,7 @@ public class Compiler {
             command.add(f.getAbsolutePath());
         }
 
-        ProcessRunner.ProcessResult r = ProcessRunner.run(command, 15);
+        ProcessResult r = ProcessRunner.run(command, 15);
 
         return new CompilationResult(r.isSuccess(), r.getOutput());
     }
