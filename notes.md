@@ -92,14 +92,14 @@
 ```
 
 PROGRAM FLOW
-Initialization: Member 1's Main starts the app. ConfigLoader reads config.properties into memory.
-Ingestion: Member 1's GradingPipeline calls Member 2's ZipService.unzip(), returning raw file paths.
-Validation: Paths are passed to Member 2's Validator, returning a list of Submission objects containing attached Anomaly logs for structural errors.
-Sanitization: Broken Submission objects are routed to Member 2's Sanitizer, which auto-fixes directories and missing headers.
-Preparation: Fixed Submission objects are sent to Member 3's TestInjector to receive tester files, then passed to Compiler for bytecode generation.
-Execution: Compiled files go to Member 3's ProcessRunner, which captures stdout and safely terminates timeouts.
-Evaluation: Raw stdout is handed to Member 4's Evaluator to generate QuestionScore objects based on passed test cases.
-Analytics: A map (key: student ID as String, values: raw Java code as String) is passed to Member 4's PlagiarismEngine to identify heavily duplicated logic.
-Export: Scores and anomalies are passed to Member 5's CsvWriter for scoresheet.csv and HtmlAnomalyBuilder for the bonus report.
-UI Wrapping: Throughout steps 1–9, Member 6's ConsoleCLI receives status updates from GradingPipeline and renders clean progress indicators to the user without exposing internal logic.
+1. Initialization: Member 1's `Main` starts the app. `ConfigLoader` reads config.properties, and `Main` boots up the `GradingPipeline`.
+2. Ingestion: `GradingPipeline` calls Member 2's `ZipService` to unzip the massive batch of student submissions.
+3. Validation & Sanitization: `GradingPipeline` passes the folder paths to Member 2's `Validator` and `Sanitizer`, wrapping valid folders into clean `Submission` objects.
+4. Test Injection: `GradingPipeline` loops through the `Submission` objects and sends them to Member 3's `TestInjector` to overwrite any student tester files with the professor's master tester files.
+5. Compilation: `GradingPipeline` passes the `Submission` to Member 3's `Compiler`, which compiles the `.java` files into a `classes/` folder.
+6. Execution: `GradingPipeline` constructs the terminal command (e.g., `["java", "Q1aTester"]`) and passes it to Member 3's `ProcessRunner.run()`. The runner executes the code, captures all `stdout`, and returns a `ProcessResult` object containing that raw text.
+7. Evaluation: `GradingPipeline` takes the raw output string from `ProcessResult` and feeds it into Member 4's `Evaluator`. The Evaluator parses the text to determine passed/failed tests and returns a `QuestionScore` object.
+8. Analytics: After all submissions are evaluated, `GradingPipeline` bundles every student's raw source code into a Map and passes it to Member 4's `PlagiarismEngine.checkAll()` to detect cheating rings.
+9. Export: `GradingPipeline` hands the compiled scores and plagiarism results to Member 5's `CsvWriter` and `HtmlAnomalyBuilder` to generate the final files.
+10. UI Wrapping: Throughout steps 1–9, Member 6's `ConsoleCLI` receives status updates from `GradingPipeline` and renders a clean progress bar to the user.
 
