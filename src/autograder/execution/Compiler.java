@@ -55,6 +55,8 @@ public class Compiler {
 // small example usage below. Will have to loop it in practice.
 
 // Compile student code + tester
+
+// Compiler compiler = new Compiler();
 // CompilationResult result = compiler.compile(submission);
 // if (!result.isSuccess()) {
 //     System.out.println("Compilation failed: " + result.getOutput());
