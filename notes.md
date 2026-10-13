@@ -99,7 +99,7 @@ Sanitization: Broken Submission objects are routed to Member 2's Sanitizer, whic
 Preparation: Fixed Submission objects are sent to Member 3's TestInjector to receive tester files, then passed to Compiler for bytecode generation.
 Execution: Compiled files go to Member 3's ProcessRunner, which captures stdout and safely terminates timeouts.
 Evaluation: Raw stdout is handed to Member 4's Evaluator to generate QuestionScore objects based on passed test cases.
-Analytics: All source code is passed to Member 4's PlagiarismEngine to identify heavily duplicated logic.
+Analytics: A map (key: student ID as String, values: raw Java code as String) is passed to Member 4's PlagiarismEngine to identify heavily duplicated logic.
 Export: Scores and anomalies are passed to Member 5's CsvWriter for scoresheet.csv and HtmlAnomalyBuilder for the bonus report.
 UI Wrapping: Throughout steps 1–9, Member 6's ConsoleCLI receives status updates from GradingPipeline and renders clean progress indicators to the user without exposing internal logic.
 

@@ -1,11 +1,15 @@
 package model;
 
+import java.util.List;
+
 public class Submission {
     private String studentId;
     private String name;
     private String folderPath;
     // private ArrayList<Anomaly> anomalies;
-    private PlagiarismResult plagiarismResult;
+    
+    // CHANGED: Now accepts a List of results to track multiple cheating offenses
+    private List<PlagiarismResult> plagiarismResults;
 
     public Submission(String studentId, String name, String folderPath) {
         this.studentId = studentId;
@@ -20,6 +24,13 @@ public class Submission {
         this.studentId = studentId;
     }
 
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getFolderPath() {
         return folderPath;
     }
@@ -27,10 +38,10 @@ public class Submission {
         this.folderPath = folderPath;
     }
 
-    public PlagiarismResult getPlagiarismResult() {
-        return plagiarismResult;
+    public List<PlagiarismResult> getPlagiarismResults() {
+        return plagiarismResults;
     }
-    public void setPlagiarismResult(PlagiarismResult plagiarismResult) {
-        this.plagiarismResult = plagiarismResult;
+    public void setPlagiarismResults(List<PlagiarismResult> plagiarismResults) {
+        this.plagiarismResults = plagiarismResults;
     }
 }

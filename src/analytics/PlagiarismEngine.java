@@ -1,20 +1,37 @@
 package analytics;
 
 import model.PlagiarismResult;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class PlagiarismEngine {
-    
-    // The public API that Yan Tat's GradingPipeline will call later.
-    // It returns the PlagiarismResult object that Gabriele's report generator needs.
-    public static PlagiarismResult compareStudents(String studentA_Id, String codeA, String studentB_Id, String codeB) {
-        Set<String> tokensA = tokenize(codeA);
-        Set<String> tokensB = tokenize(codeB);
+
+    // Input: studentId -> source code. Output: A list of all flagged pairs.
+    public static List<PlagiarismResult> checkAll(Map<String, String> codeById) {
+        List<String> ids = new ArrayList<>(codeById.keySet());
         
-        double score = calculateSim(tokensA, tokensB);
-        
-        return new PlagiarismResult(studentA_Id, studentB_Id, score);
+        // Tokenize each submission
+        Map<String, Set<String>> tokens = new HashMap<>();
+        for (String id : ids) {
+            tokens.put(id, tokenize(codeById.get(id)));
+        }
+
+        // Return a list of all plagiarised pairs
+        List<PlagiarismResult> allFlaggedPairs = new ArrayList<>();
+
+        for (int i = 0; i < ids.size(); i++) {
+            for (int j = i + 1; j < ids.size(); j++) {
+                String a = ids.get(i);
+                String b = ids.get(j);
+                
+                double score = calculateSim(tokens.get(a), tokens.get(b));
+
+                // Flag ANY pair that crosses the threshold
+                if (score > 0.75) {
+                    allFlaggedPairs.add(new PlagiarismResult(a, b, score));
+                }
+            }
+        }
+        return allFlaggedPairs;
     }
 
     private static Set<String> tokenize(String rawCode) {
