@@ -147,6 +147,7 @@ public class ProgressUI {
     }
 
     public static void onCopyTestFiles(int numOfFiles){
+        resetBar();
         progressText.setText("Copying Tester files...");
         bar.setMaximum(numOfFiles);
     }
@@ -157,6 +158,7 @@ public class ProgressUI {
     }
 
     public static void onEvaluate(int numOfFiles){
+        resetBar();
         progressText.setText("Marking student submissions...");
         bar.setMaximum(numOfFiles);
     }
@@ -166,9 +168,10 @@ public class ProgressUI {
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
-    public static void onPlagiarismCheck(int numOfFiles){
+    public static void onPlagiarismCheck(int numOfComparisons){
+        resetBar();
         progressText.setText("Plagiarism check...");
-        bar.setMaximum(numOfFiles);
+        bar.setMaximum(numOfComparisons);
     }
 
     public static void onPlagiarismSuccess(){
@@ -177,6 +180,7 @@ public class ProgressUI {
     }
 
     public static void onGenerateReport(){
+        resetBar();
         progressText.setText("Generating report...");
         bar.setMaximum(100);
     }
