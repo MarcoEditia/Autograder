@@ -99,7 +99,7 @@ PROGRAM FLOW
 5. Compilation: `GradingPipeline` passes the `Submission` to Member 3's `Compiler`, which compiles the `.java` files into a `classes/` folder.
 6. Execution: `GradingPipeline` constructs the terminal command (e.g., `["java", "Q1aTester"]`) and passes it to Member 3's `ProcessRunner.run()`. The runner executes the code, captures all `stdout`, and returns a `ProcessResult` object containing that raw text.
 7. Evaluation: `GradingPipeline` takes the raw output string from `ProcessResult` and feeds it into Member 4's `Evaluator`. The Evaluator parses the text to determine passed/failed tests and returns a `QuestionScore` object.
-8. Analytics: After all submissions are evaluated, `GradingPipeline` bundles every student's raw source code into a Map and passes it to Member 4's `PlagiarismEngine.checkAll()` to detect cheating rings.
+8. Analytics: After all submissions are evaluated, `GradingPipeline` bundles every student's raw source code into a Map and passes it to Member 4's `PlagiarismEngine.checkAll()`, which returns a list of `PlagiarismResult`s.
 9. Export: `GradingPipeline` hands the compiled scores and plagiarism results to Member 5's `CsvWriter` and `HtmlAnomalyBuilder` to generate the final files.
 10. UI Wrapping: Throughout steps 1–9, Member 6's `ConsoleCLI` receives status updates from `GradingPipeline` and renders a clean progress bar to the user.
 
