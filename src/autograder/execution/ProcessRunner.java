@@ -6,29 +6,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import model.ProcessResult;
+
 public class ProcessRunner {
-    public static class ProcessResult {
-        private final int exitCode;
-        private final String output;
-        private final boolean timedOut;
-        
-        public ProcessResult(int exitCode, String output, boolean timedOut) {
-            this.exitCode = exitCode;
-            this.output = output;
-            this.timedOut = timedOut;
-        }
-
-        public int getExitCode() {
-            return exitCode;
-        }
-
-        public String getOutput() {
-            return output;
-        }
-
-        public boolean isTimedOut() {return timedOut;}
-        public boolean isSuccess() {return exitCode == 0 && !timedOut;}
-        }
 
     public static ProcessResult run(List<String> command, long timeoutSeconds) {
         StringBuilder outputLog = new StringBuilder();
@@ -60,7 +40,6 @@ public class ProcessRunner {
             });
             readerThread.start();
             
-
             boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
             //let compilation process run for timeoutSeconds amount of seconds,
             //if compilation process terminates within time limit, whether pass or fail, finished becomes true
