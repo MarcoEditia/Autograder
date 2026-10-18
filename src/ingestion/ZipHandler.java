@@ -39,20 +39,23 @@ public final class ZipHandler {
             // Anomaly 2: has unrenamed template folder name
             boolean unrenamedRootFolder = topLevelNames.stream().anyMatch(name -> name.equalsIgnoreCase(DEFAULT_RESOURCE_FOLDER) || name.equalsIgnoreCase("RenameToYourStudentID"));
             // Anomaly 3: Random / wrong root folder name
-            boolean incorrectRootFolder = topLevelNames.stream().anyMatch(name -> !(name.equalsIgnoreCase(studentId)));
+            boolean incorrectRootFolder = topLevelNames.stream().noneMatch(name -> (name.equalsIgnoreCase(studentId)));
             
             if (missingRootUsernameFolder) {
                 detectedAnomalies.add(new Anomaly(
+                    studentId,
                     Anomaly.Type.FLATTENED_HIERARCHY,
-                    " " + topLevelNames + "Zip contains question folders directly at root without student username folder"
+                    "Zip contains question folders directly at root without student username folder"
                 ));
             } else if (unrenamedRootFolder) {
                 detectedAnomalies.add(new Anomaly(
+                    studentId,
                     Anomaly.Type.UNRENAMED_FOLDER,
                     "Zip contains default unrenamed template folder '" + DEFAULT_RESOURCE_FOLDER + "'"
                 ));
             } else if (incorrectRootFolder) {
                 detectedAnomalies.add(new Anomaly(
+                    studentId,
                     Anomaly.Type.INCORRECT_FOLDER,
                     "Zip contains default incorrect root folder '" + topLevelNames +  "'"
                 ));
@@ -75,6 +78,10 @@ public final class ZipHandler {
 
             for (ZipEntry entry : entries) {
                 String entryName = entry.getName().replace('\\', '/');
+
+                if (isMacOsMetadata(entryName)) {
+                    continue;
+                }
 
                 // Strip wrapper directory if present (e.g. "RenameToYourUsername/" or "jiagu.wen.2025/")
                 if (wrapperDirectory != null && entryName.startsWith(wrapperDirectory + "/")) {
@@ -110,6 +117,9 @@ public final class ZipHandler {
         Set<String> topLevelNames = new HashSet<>();
         for (ZipEntry entry : entries) {
             String entryName = entry.getName().replace('\\', '/');
+            if (isMacOsMetadata(entryName)) {
+                continue;
+            }
             while (entryName.startsWith("/")) {
                 entryName = entryName.substring(1);
             }
@@ -128,6 +138,9 @@ public final class ZipHandler {
 
         for (ZipEntry entry : entries) {
             String entryName = entry.getName().replace('\\', '/');
+            if (isMacOsMetadata(entryName)) {
+                continue;
+            }
             while (entryName.startsWith("/")) {
                 entryName = entryName.substring(1);
             }
@@ -151,5 +164,19 @@ public final class ZipHandler {
             }
         }
         return null;
+    }
+
+    private static boolean isMacOsMetadata(String entryName) {
+        String normalizedName = entryName.replace('\\', '/');
+        while (normalizedName.startsWith("/")) {
+            normalizedName = normalizedName.substring(1);
+        }
+
+        int separator = normalizedName.lastIndexOf('/');
+        String fileName = separator < 0 ? normalizedName : normalizedName.substring(separator + 1);
+        return normalizedName.equals("__MACOSX")
+                || normalizedName.startsWith("__MACOSX/")
+                || fileName.equals(".DS_Store")
+                || fileName.startsWith("._");
     }
 }

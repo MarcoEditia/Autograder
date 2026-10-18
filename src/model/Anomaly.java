@@ -13,7 +13,7 @@ public final class Anomaly {
     }
 
     public enum Type {
-        // Step 1: Ingestion & Structural issues
+        // Ingestion and Structural issues
         UNRENAMED_FOLDER("Unrenamed Root Directory", Severity.WARNING),
         INCORRECT_FOLDER("Incorrect Root Directory", Severity.WARNING),
         FLATTENED_HIERARCHY("Missing Username Root Directory", Severity.WARNING),
@@ -22,7 +22,7 @@ public final class Anomaly {
         MISSING_HEADER("Missing or Malformed Header Comment", Severity.WARNING),
         UNMODIFIED_TEMPLATE("Unmodified Resource Folder Submitted", Severity.WARNING),
 
-        // Steps 2 & 3: Compilation & Execution issues
+        // Compilation & Execution issues
         COMPILATION_FAILURE("Java Compilation Failed", Severity.ERROR),
         EXECUTION_TIMEOUT("Execution Timed Out (Infinite Loop)", Severity.ERROR),
         RUNTIME_ERROR("Subprocess Exited With Error", Severity.ERROR);
@@ -44,12 +44,18 @@ public final class Anomaly {
         }
     }
 
+    private final String studentId;
     private final Type type;
     private final String details;
 
-    public Anomaly(Type type, String details) {
+    public Anomaly(String studentId, Type type, String details) {
         this.type = Objects.requireNonNull(type, "type cannot be null");
+        this.studentId = Objects.requireNonNull(studentId, "studentId cannot be null");
         this.details = details == null ? "" : details.trim();
+    }
+
+    public String studentId(){
+        return studentId;
     }
 
     public Type getType() {
@@ -66,9 +72,10 @@ public final class Anomaly {
 
     @Override
     public String toString() {
-        return String.format("[%s] [%s] | %s - %s",
+        return String.format("[%s] [%s] StudentId: [%s] | %s - %s",
                 getSeverity(),
                 type.name(),
+                studentId,
                 type.getLabel(),
                 details);
     }
