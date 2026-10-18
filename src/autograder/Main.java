@@ -7,12 +7,13 @@ import autograder.pipeline.GradingPipeline;
 public class Main {
     public static void main(String args[]){
         System.out.println("Starting Application...");
-        Config config = new Config();
-        GradingPipeline pipeline = new GradingPipeline(config);
+        
         try{
+            Config config = new Config();
+            GradingPipeline pipeline = new GradingPipeline(config);
             pipeline.run();
-        } catch(Exception e) {
-            System.out.println(e);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
