@@ -9,5 +9,10 @@ public class Main {
         System.out.println("Starting Application...");
         Config config = new Config();
         GradingPipeline pipeline = new GradingPipeline(config);
+        try{
+            pipeline.run();
+        } catch(Exception e) {
+            System.out.println(e);
+        }
     }
 }
