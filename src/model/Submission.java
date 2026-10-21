@@ -6,9 +6,7 @@ public class Submission {
     private String studentId;
     private String name;
     private String folderPath;
-    // private ArrayList<Anomaly> anomalies;
-    
-    // CHANGED: Now accepts a List of results to track multiple cheating offenses
+
     private List<PlagiarismResult> plagiarismResults;
 
     public Submission(String studentId, String name, String folderPath) {

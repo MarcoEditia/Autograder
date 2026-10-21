@@ -13,12 +13,15 @@ public final class Config {
     private final Path studentSubmissionPath;
     private final Path cleanStudentSubmissionPath;
 
+    private final long timeout;
+
     public Config() {
         Properties configProperties = loadProperties(CONFIG_FILE);
 
         this.testerFilesPath = getPath(configProperties, "TESTER_FILES_PATH");
         this.studentSubmissionPath = getPath(configProperties, "STUDENT_SUBMISSION_PATH");
         this.cleanStudentSubmissionPath = getPath(configProperties, "CLEAN_STUDENT_SUBMISSION_PATH");
+        this.timeout = getLong(configProperties, "TIMEOUT");
     }
 
     private Properties loadProperties(String fileName) {
@@ -47,6 +50,19 @@ public final class Config {
         return cleanPath;
     }
 
+    private long getLong(Properties props, String key) {
+        String rawTimeout = props.getProperty(key);
+
+        if (rawTimeout == null || rawTimeout.trim().isEmpty()) {
+            throw new IllegalArgumentException(key + " configuration key is missing or empty!");
+        }
+        try {
+            return Long.parseLong(rawTimeout);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(key + " configuration key is not a valid long type!");
+        }
+    }
+
     public Path getTesterFilesPath() {
         return testerFilesPath;
     }
@@ -57,5 +73,9 @@ public final class Config {
 
     public Path getCleanStudentSubmissionPath() {
         return cleanStudentSubmissionPath;
+    }
+
+    public long getTimeout() {
+        return timeout;
     }
 }
