@@ -14,8 +14,8 @@ public final class Config {
     private final Path cleanStudentSubmissionPath;
 
     private final Path generatedReportPath;
-    private final String scoresReportPath;
-    private final String anomalyReportPath;
+    private final String scoresReportFilename;
+    private final String anomalyReportFilename;
 
     private final long timeout;
 
@@ -27,8 +27,8 @@ public final class Config {
         this.cleanStudentSubmissionPath = getPath(configProperties, "CLEAN_STUDENT_SUBMISSION_PATH");
 
         this.generatedReportPath = getPath(configProperties, "GENERATED_REPORT_PATH");
-        this.scoresReportPath = configProperties.getProperty("SCORES_REPORT_FILENAME");
-        this.anomalyReportPath = configProperties.getProperty("ANOMALY_REPORT_FILENAME");
+        this.scoresReportFilename = getString(configProperties, "SCORES_REPORT_FILENAME");
+        this.anomalyReportFilename = getString(configProperties, "ANOMALY_REPORT_FILENAME");
 
         this.timeout = getLong(configProperties, "TIMEOUT");
     }
@@ -46,6 +46,15 @@ public final class Config {
         }
 
         return props;
+    }
+
+    private String getString(Properties props, String key) {
+        String string = props.getProperty(key);
+
+        if (string == null || string.trim().isEmpty()) {
+            throw new IllegalArgumentException(key + " configuration key is missing or empty!");
+        }
+        return string;
     }
 
     private Path getPath(Properties props, String key) {
@@ -88,12 +97,12 @@ public final class Config {
         return generatedReportPath;
     }
 
-    public String getScoresReportPath() {
-        return scoresReportPath;
+    public String getScoresReportFilename() {
+        return scoresReportFilename;
     }
 
-    public String getAnomalyReportPath() {
-        return anomalyReportPath;
+    public String getAnomalyReportFilename() {
+        return anomalyReportFilename;
     }
 
     public long getTimeout() {

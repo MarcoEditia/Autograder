@@ -124,11 +124,11 @@ public class GradingPipeline {
                 CsvWriter csvWriter = new CsvWriter();
                 csvWriter.export(
                     new ReportData(grades, anomalyList, flags), 
-                    config.getGeneratedReportPath().toString() + config.getScoresReportPath()
+                    config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename()
                 );
                 HtmlAnomalyBuilder htmlAnomalyBuilder = new HtmlAnomalyBuilder();
                 htmlAnomalyBuilder.generateReport(
-                    grades, config.getGeneratedReportPath().toString() + config.getAnomalyReportPath()
+                    grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
             } catch (IOException e) {
                 System.out.println("Error while generating reports: " + e.getMessage());

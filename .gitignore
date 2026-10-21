@@ -17,5 +17,6 @@ classes/
 *.csv
 *.pdf
 
-# Compiled and processed student submissions
+# Compiled student submissions, generated reports
 clean-student-submission/
+reports/
