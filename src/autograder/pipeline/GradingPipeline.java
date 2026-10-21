@@ -69,6 +69,8 @@ public class GradingPipeline {
                     CompilationResult result = this.compiler.compile(submission, questionDir.getName());
                     if (!result.isSuccess()) {
                         System.out.println("Compilation failed: " + result.getOutput());
+                    } else {
+                        System.out.println("[SUCCESS] Compiled " + questionDir.getName() + " for " + submission.getStudentId());
                     }
 
                     ProcessResult runResult = ProcessRunner.run(new ArrayList<>(List.of(
