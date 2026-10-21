@@ -47,11 +47,18 @@ public final class Anomaly {
     private final String studentId;
     private final Type type;
     private final String details;
+    private final String resolution;
 
+    // Constructor for unresolved anomalies (requires manual review).
     public Anomaly(String studentId, Type type, String details) {
+        this(studentId, type, details, null);
+    }
+    // Constructor for anomalies with an explicit resolution action.
+    public Anomaly(String studentId, Type type, String details, String resolution) {
         this.type = Objects.requireNonNull(type, "type cannot be null");
         this.studentId = Objects.requireNonNull(studentId, "studentId cannot be null");
         this.details = details == null ? "" : details.trim();
+        this.resolution = (resolution == null || resolution.isBlank()) ? null : resolution.trim();
     }
 
     public String studentId(){
@@ -68,6 +75,15 @@ public final class Anomaly {
 
     public String getDetails() {
         return details;
+    }
+
+    // Returns true if this anomaly was automatically repaired or resolved.
+    public boolean isResolved() {
+        return resolution != null;
+    }
+    // Returns the resolution action text if resolved, or a default fallback message.
+    public String getResolution() {
+        return isResolved() ? resolution : "Requires Review";
     }
 
     @Override
