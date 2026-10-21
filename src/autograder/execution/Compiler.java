@@ -8,6 +8,23 @@ import model.Submission;
 import model.ProcessResult;
 
 public class Compiler {
+    private void findJavaFiles(File directory, List<File> resultList) {
+        //directory is 2023-2024-jing.lim.2021
+        //resultList is empty at start
+        File[] files = directory.listFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            if (file.isDirectory() && !file.getName().equals("classes")) {
+                findJavaFiles(file, resultList); //recursive if it is a directory that is not classes folder
+            }
+            else if (file.isFile() && file.getName().endsWith(".java")) {
+                //check if its a java file
+                resultList.add(file);
+            }
+        }
+    }
+
     public CompilationResult compile(Submission submission) {
         if (submission == null || submission.getFolderPath() == null) {
             return new CompilationResult(false, "Invalid submission or null folder path.");
@@ -18,6 +35,17 @@ public class Compiler {
 
         return compile(sourceDir, outputDir);
     }
+    
+    public CompilationResult compile(Submission submission, String questionFolder) {
+        if (submission == null || submission.getFolderPath() == null) {
+            return new CompilationResult(false, "Invalid submission or null folder path.");
+        }
+        File sourceDir = new File(submission.getFolderPath(), questionFolder);
+        File outputDir = new File(sourceDir, "classes");
+
+        return compile(sourceDir, outputDir);
+    }
+
     public CompilationResult compile(File sourceDir, File outputDir) {
         //sourceDir is student folder that has the java files including the tester files injected
         //outputDir is the classes folder inside the student's working space
@@ -30,10 +58,11 @@ public class Compiler {
             outputDir.mkdirs();
         }
 
-        File[] javaFiles = sourceDir.listFiles((dir, name) -> name.endsWith(".java"));
-        //get a list of java files based on its suffix. not recursive
+        List<File> javaFiles = new ArrayList<>();
+        findJavaFiles(sourceDir, javaFiles);
+        //get a list of java files based on its suffix. recursive
 
-        if (javaFiles == null || javaFiles.length == 0) {
+        if (javaFiles.isEmpty()) {
             return new CompilationResult(false, "No .java files found in directory " + sourceDir.getPath());
         }
 
