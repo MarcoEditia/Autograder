@@ -16,3 +16,6 @@ classes/
 # Local generated files
 *.csv
 *.pdf
+
+# Compiled and processed student submissions
+clean-student-submission/

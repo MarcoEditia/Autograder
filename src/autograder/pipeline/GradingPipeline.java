@@ -19,11 +19,11 @@ import model.Submission;
 import scoring.Evaluator;
 
 public class GradingPipeline {
-    private Config config;
-    private Compiler compiler;
+    private final Config config;
+    private final Compiler compiler;
 
-    private File testerFilesFolder;
-    private TestInjector testInjector;
+    private final File testerFilesFolder;
+    private final TestInjector testInjector;
 
     public GradingPipeline(Config config) {
         this.config = config;
@@ -66,14 +66,14 @@ public class GradingPipeline {
                     this.testInjector.injectTesters(testerFile.getName(), questionDir);
 
                     // Compile results
-                    CompilationResult result = this.compiler.compile(submission);
+                    CompilationResult result = this.compiler.compile(submission, questionDir.getName());
                     if (!result.isSuccess()) {
                         System.out.println("Compilation failed: " + result.getOutput());
                     }
 
                     ProcessResult runResult = ProcessRunner.run(new ArrayList<>(List.of(
                         "java", "-cp", 
-                        new File(questionDir, "classes").getAbsolutePath() + ";" + questionDir.getAbsolutePath(), 
+                        new File(questionDir, "classes").getAbsolutePath() + File.pathSeparator + questionDir.getAbsolutePath(), 
                         testerFileName
                     )), config.getTimeout());
 
@@ -81,7 +81,7 @@ public class GradingPipeline {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error while unzipping student submissions: " + e.getMessage());
         }
     }
 }
