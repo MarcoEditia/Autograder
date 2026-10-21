@@ -13,7 +13,7 @@ public class Main {
             GradingPipeline pipeline = new GradingPipeline(config);
             pipeline.run();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("An uncaught error occurred: " + e.getMessage());
         }
     }
 }
