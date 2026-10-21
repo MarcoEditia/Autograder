@@ -68,6 +68,8 @@ public class Compiler {
 
         List<String> command = new ArrayList<>();
         command.add("javac");
+        command.add("-cp");
+        command.add(outputDir.getAbsolutePath() + File.pathSeparator + sourceDir.getAbsolutePath());
         command.add("-d");
         command.add(outputDir.getAbsolutePath());
 
