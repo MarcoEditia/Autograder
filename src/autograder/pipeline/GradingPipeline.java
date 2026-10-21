@@ -1,5 +1,6 @@
 package autograder.pipeline;
 
+import analytics.PlagiarismEngine;
 import autograder.config.Config;
 import autograder.execution.CompilationResult;
 import autograder.execution.Compiler;
@@ -8,14 +9,17 @@ import autograder.execution.TestInjector;
 import autograder.util.FileUtils;
 import ingestion.IngestionResult;
 import ingestion.SubmissionCleaner;
+import io.CsvWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import model.Anomaly;
-import model.ProcessResult;
-import model.Submission;
+import java.util.Map;
+import model.*;
+import reporting.HtmlAnomalyBuilder;
 import scoring.Evaluator;
 
 public class GradingPipeline {
@@ -37,6 +41,8 @@ public class GradingPipeline {
         try {
             List<Path> zipFiles = FileUtils.listFilePaths(config.getStudentSubmissionPath());
             List<Anomaly> anomalyList = new ArrayList<>();
+            List<FinalGrade> grades = new ArrayList<>();
+            Map<String, String> codeById = new HashMap<>();
 
             for (Path zip : zipFiles) {
                 // Ensures file is a zip file
@@ -50,10 +56,14 @@ public class GradingPipeline {
                 for (Anomaly anomaly : ingestionResult.getAnomalies()) {
                     System.out.println(anomaly.toString());
                 }
+                
+                Submission submission = new Submission(ingestionResult.getStudentId(), ingestionResult.getStudentName(), ingestionResult.getCleanSubmissionDirectory().toString());
+                FinalGrade grade = new FinalGrade(submission.getStudentId(), submission.getName());
+                for (Anomaly anomaly : ingestionResult.getAnomalies()) {
+                    grade.addAnomaly(anomaly);
+                }
 
                 // ============ Execution ============
-                Submission submission = new Submission(ingestionResult.getStudentId(), ingestionResult.getStudentName(), ingestionResult.getCleanSubmissionDirectory().toString());
-                
                 for (File testerFile : testerFilesFolder.listFiles()) {
                     if (!testerFile.getName().endsWith(".java")) continue;
 
@@ -79,9 +89,51 @@ public class GradingPipeline {
                         testerFileName
                     )), config.getTimeout());
 
-                    Evaluator.evaluate(questionName, runResult.getOutput());
+                    QuestionScore questionScore = Evaluator.evaluate(questionName, runResult.getOutput());
+                    grade.addQuestionScore(questionScore);
+                }
+
+                // Attaching all source codes into one chunk of string to process plagiarism
+                String sourceCode = "";
+                for (Path file : FileUtils.listFilePaths(ingestionResult.getCleanSubmissionDirectory())) {
+                    String fileName = file.getFileName().toString();
+                    if (!fileName.endsWith(".java") || fileName.endsWith("Tester.java")) continue;
+
+                    sourceCode += Files.readString(file) + "\n";
+                }
+
+                codeById.put(submission.getStudentId(), sourceCode);
+                grades.add(grade);
+            }
+            
+            List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById);
+
+            // Adding plagiarism flags to each grade
+            for (FinalGrade grade : grades) {
+                // Only check A. All plagiarism pairs has a opposite pair version
+                for (PlagiarismResult flag : flags) {
+                    if (grade.getStudentId().equals(flag.getStudentA())) {
+                        grade.addPlagiarismFlag(flag);
+                        break;
+                    }
                 }
             }
+
+            // Generate report files
+            try {
+                CsvWriter csvWriter = new CsvWriter();
+                csvWriter.export(
+                    new ReportData(grades, anomalyList, flags), 
+                    config.getGeneratedReportPath().toString() + config.getScoresReportPath()
+                );
+                HtmlAnomalyBuilder htmlAnomalyBuilder = new HtmlAnomalyBuilder();
+                htmlAnomalyBuilder.generateReport(
+                    grades, config.getGeneratedReportPath().toString() + config.getAnomalyReportPath()
+                );
+            } catch (IOException e) {
+                System.out.println("Error while generating reports: " + e.getMessage());
+            }
+            
         } catch (IOException e) {
             System.out.println("Error while unzipping student submissions: " + e.getMessage());
         }

@@ -13,6 +13,10 @@ public final class Config {
     private final Path studentSubmissionPath;
     private final Path cleanStudentSubmissionPath;
 
+    private final Path generatedReportPath;
+    private final String scoresReportPath;
+    private final String anomalyReportPath;
+
     private final long timeout;
 
     public Config() {
@@ -21,6 +25,11 @@ public final class Config {
         this.testerFilesPath = getPath(configProperties, "TESTER_FILES_PATH");
         this.studentSubmissionPath = getPath(configProperties, "STUDENT_SUBMISSION_PATH");
         this.cleanStudentSubmissionPath = getPath(configProperties, "CLEAN_STUDENT_SUBMISSION_PATH");
+
+        this.generatedReportPath = getPath(configProperties, "GENERATED_REPORT_PATH");
+        this.scoresReportPath = configProperties.getProperty("SCORES_REPORT_FILENAME");
+        this.anomalyReportPath = configProperties.getProperty("ANOMALY_REPORT_FILENAME");
+
         this.timeout = getLong(configProperties, "TIMEOUT");
     }
 
@@ -75,7 +84,23 @@ public final class Config {
         return cleanStudentSubmissionPath;
     }
 
+    public Path getGeneratedReportPath() {
+        return generatedReportPath;
+    }
+
+    public String getScoresReportPath() {
+        return scoresReportPath;
+    }
+
+    public String getAnomalyReportPath() {
+        return anomalyReportPath;
+    }
+
     public long getTimeout() {
         return timeout;
+    }
+
+    public static String getConfigFile() {
+        return CONFIG_FILE;
     }
 }
