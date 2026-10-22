@@ -6,6 +6,7 @@ import autograder.execution.CompilationResult;
 import autograder.execution.Compiler;
 import autograder.execution.ProcessRunner;
 import autograder.execution.TestInjector;
+import autograder.ui.ProgressUI;
 import autograder.util.FileUtils;
 import ingestion.IngestionResult;
 import ingestion.SubmissionCleaner;
@@ -44,6 +45,13 @@ public class GradingPipeline {
             List<FinalGrade> grades = new ArrayList<>();
             Map<String, String> codeById = new HashMap<>();
 
+            // Setup UI: Base unzipping bar
+            int zipCount = 0;
+            for (Path zip : zipFiles) {
+                if (zip.getFileName().toString().toLowerCase().endsWith(".zip")) zipCount++;
+            }
+            ProgressUI.onEvaluate(zipCount);
+
             for (Path zip : zipFiles) {
                 // Ensures file is a zip file
                 if (!zip.getFileName().toString().toLowerCase().endsWith(".zip")) continue;
@@ -52,7 +60,7 @@ public class GradingPipeline {
                 IngestionResult ingestionResult = SubmissionCleaner.processSubmission(zip, config.getCleanStudentSubmissionPath());
                 anomalyList.addAll(ingestionResult.getAnomalies());
 
-                // System.out.println("Ingested submission for: " + ingestionResult.getStudentId());
+                System.out.println("Ingested submission for: " + ingestionResult.getStudentId());
                 for (Anomaly anomaly : ingestionResult.getAnomalies()) {
                     System.out.println(anomaly.toString());
                 }
@@ -104,9 +112,19 @@ public class GradingPipeline {
 
                 codeById.put(submission.getStudentId(), sourceCode);
                 grades.add(grade);
+                ProgressUI.addBarValue();
             }
+            /* All 3 types of operations are done one submission at a time, and so they will
+                complete/fail together */
+            ProgressUI.onUnzipSuccess();
+            ProgressUI.onCopyTestFilesSuccess();
+            ProgressUI.onEvaluateSuccess();
             
+            // All plagiarism pairs has a opposite pair instance, numOfComparison = n(n-1)/2
+            ProgressUI.onPlagiarismCheck(grades.size() * (grades.size() - 1) / 2); 
             List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById);
+            ProgressUI.completeBar();
+            ProgressUI.onPlagiarismSuccess();
 
             // Adding plagiarism flags to each grade
             for (FinalGrade grade : grades) {
@@ -114,12 +132,12 @@ public class GradingPipeline {
                 for (PlagiarismResult flag : flags) {
                     if (grade.getStudentId().equals(flag.getStudentA())) {
                         grade.addPlagiarismFlag(flag);
-                        break;
                     }
                 }
             }
 
             // Generate report files
+            ProgressUI.onGenerateReport();
             try {
                 CsvWriter csvWriter = new CsvWriter();
                 csvWriter.export(
@@ -130,12 +148,13 @@ public class GradingPipeline {
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
+                ProgressUI.onGenerateReportSuccess();
             } catch (IOException e) {
-                System.out.println("Error while generating reports: " + e.getMessage());
+                ProgressUI.setErrorText("IOError while generating reports: " + e.getMessage());
             }
             
         } catch (IOException e) {
-            System.out.println("Error while unzipping student submissions: " + e.getMessage());
+            ProgressUI.setErrorText("IOError while unzipping student submissions: " + e.getMessage());
         }
     }
 }
