@@ -24,12 +24,17 @@ public class ProgressUI {
     private static JLabel title;
     private static JLabel sideTextZip;
     private static JLabel sideTextCopy;
+    private static JLabel sideTextComplie;
     private static JLabel sideTextEvaluate;
     private static JLabel sideTextPlagiarism;
     private static JLabel sideTextReport;
+    private static JLabel studentCounterText;
     private static JLabel progressText;
     private static JLabel errorText;
     private static GridBagConstraints gbc;
+
+    private static int totalStudents = 0;
+    private static int studentCounter = 1;
 
     public static void main(String[] args) {
         // main method for testing only
@@ -50,7 +55,7 @@ public class ProgressUI {
         title.setFont(new Font("Arial", 0, 30));
 
         sidePanel = new JPanel(new BorderLayout());
-        innerSidePanel = new JPanel(new GridLayout(5, 1, 0, 15));
+        innerSidePanel = new JPanel(new GridLayout(6, 1, 0, 15));
         
         innerSidePanel.setBackground(Color.white);
         sideTextZip = new JLabel("Unzipping files");
@@ -58,6 +63,9 @@ public class ProgressUI {
 
         sideTextCopy = new JLabel("Copying Test files");
         sideTextCopy.setForeground(Color.LIGHT_GRAY);
+
+        sideTextComplie = new JLabel("Compiling Files");
+        sideTextComplie.setForeground(Color.LIGHT_GRAY);
 
         sideTextEvaluate = new JLabel("Marking submissions");
         sideTextEvaluate.setForeground(Color.LIGHT_GRAY);
@@ -70,6 +78,7 @@ public class ProgressUI {
 
         innerSidePanel.add(sideTextZip);
         innerSidePanel.add(sideTextCopy);
+        innerSidePanel.add(sideTextComplie);
         innerSidePanel.add(sideTextEvaluate);
         innerSidePanel.add(sideTextPlagiarism);
         innerSidePanel.add(sideTextReport);
@@ -100,6 +109,12 @@ public class ProgressUI {
         barPanel.add(bar, gbc);
 
         gbc.gridy = 2;
+        studentCounterText = new JLabel();
+        studentCounterText.setFont(new Font("Arial", 0, 14));
+
+        barPanel.add(studentCounterText, gbc);
+
+        gbc.gridy = 3;
         progressText = new JLabel("Starting...");
         progressText.setFont(new Font("Arial", 0, 12));
 
@@ -136,40 +151,77 @@ public class ProgressUI {
         errorText.setText(null);
     }
 
-    public static void onUnzip(int numOfZipFiles){
-        progressText.setText("Unzipping files...");
-        bar.setMaximum(numOfZipFiles);
+    // outside of the zip file for loop
+    public static void onProgramStart(int numOfStudents){
+        totalStudents = numOfStudents;
+        bar.setMaximum(numOfStudents);
+    }
+    
+    // in the zip file for loop, right before the student zip file get processed
+    public static void onStudentStart(String zipFileName){
+        sideTextZip.setForeground(Color.LIGHT_GRAY);
+        sideTextCopy.setForeground(Color.LIGHT_GRAY);
+        sideTextComplie.setForeground(Color.LIGHT_GRAY);
+        sideTextEvaluate.setForeground(Color.LIGHT_GRAY);
+        studentCounterText.setText("Student " + studentCounter + "/" + totalStudents + " (" + zipFileName + ")");
+    }
+
+    // call after ingestion so text can be changed to student ID
+    public static void onStudentIdKnown(String studentId){
+        studentCounterText.setText("Student " + studentCounter + "/" + totalStudents + " (" + studentId + ")");
+    }
+
+    public static void onUnzip(){
+        progressText.setText("Unzipping file...");
     }
 
     public static void onUnzipSuccess(){
         sideTextZip.setForeground(Color.GREEN);
     }
 
-    public static void onCopyTestFiles(int numOfFiles){
-        resetBar();
-        progressText.setText("Copying Tester files...");
-        bar.setMaximum(numOfFiles);
+    public static void onCopyTestFile(String testFileName){
+        sideTextCopy.setForeground(Color.LIGHT_GRAY);
+        sideTextComplie.setForeground(Color.LIGHT_GRAY);
+        sideTextEvaluate.setForeground(Color.LIGHT_GRAY);
+        progressText.setText("Copying Tester file (" + testFileName + ")");
     }
 
-    public static void onCopyTestFilesSuccess(){
-        progressText.setText("Copying Tester files completed");
+    public static void onCopyTestFileSuccess(){
         sideTextCopy.setForeground(Color.GREEN);
     }
 
-    public static void onEvaluate(int numOfFiles){
-        resetBar();
-        progressText.setText("Marking student submissions...");
-        bar.setMaximum(numOfFiles);
+    public static void onComplieFile(String fileName){
+        System.err.println("On compile " + fileName);
+        progressText.setText("Compiling and running file (" + fileName + ")");
+    }
+
+    // call after processrunner is done
+    public static void onComplieFileSuccess(){
+        sideTextComplie.setForeground(Color.GREEN);
+    }
+
+    public static void onEvaluate(String questionName){
+        System.err.println("Evaludate " + questionName);
+        progressText.setText("Marking " + questionName);
     }
 
     public static void onEvaluateSuccess(){
-        progressText.setText("Marking submissions completed");
+        System.err.println("Evulate succes " );
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
+    // call at the end of zip loop before processing next student
+    public static void onStudentDone(){
+        System.err.println("on student done " + studentCounter);
+        addBarValue();
+        studentCounter ++;
+    }
+
+    // call before plagiarism check, call add barValue after each pair compare
     public static void onPlagiarismCheck(int numOfComparisons){
         resetBar();
         progressText.setText("Plagiarism check...");
+        studentCounterText.setText(null);
         bar.setMaximum(numOfComparisons);
     }
 
