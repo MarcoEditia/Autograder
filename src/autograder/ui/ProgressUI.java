@@ -201,12 +201,12 @@ public class ProgressUI {
     }
 
     public static void onEvaluate(String questionName){
-        System.err.println("Evaludate " + questionName);
+        System.err.println("Evaluate " + questionName);
         progressText.setText("Marking " + questionName);
     }
 
     public static void onEvaluateSuccess(){
-        System.err.println("Evulate succes " );
+        System.err.println("Evaluate success " );
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
@@ -236,7 +236,7 @@ public class ProgressUI {
         bar.setMaximum(100);
     }
 
-    public static void onGenrateReportSuccess(){
+    public static void onGenerateReportSuccess(){
         completeBar();
         progressText.setText("Generating report completed");
         sideTextReport.setForeground(Color.GREEN);
