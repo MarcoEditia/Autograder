@@ -184,7 +184,7 @@ public class ProgressUI {
         bar.setMaximum(100);
     }
 
-    public static void onGenrateReportSuccess(){
+    public static void onGenerateReportSuccess(){
         completeBar();
         progressText.setText("Generating report completed");
         sideTextReport.setForeground(Color.GREEN);
