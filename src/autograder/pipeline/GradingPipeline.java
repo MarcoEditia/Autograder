@@ -50,21 +50,17 @@ public class GradingPipeline {
             for (Path zip : zipFiles) {
                 if (zip.getFileName().toString().toLowerCase().endsWith(".zip")) zipCount++;
             }
-            ProgressUI.onEvaluate(zipCount);
-
-            // ============ Ingestion ============
-            ArrayList<IngestionResult> ingestionResults = new ArrayList<>();
+            ProgressUI.onProgramStart(zipCount);
+            
             for (Path zip : zipFiles) {
                 // Ensures file is a zip file
                 if (!zip.getFileName().toString().toLowerCase().endsWith(".zip")) continue;
 
+                // ============ Ingestion ============
                 IngestionResult ingestionResult = SubmissionCleaner.processSubmission(zip, config.getCleanStudentSubmissionPath());
-                ingestionResults.add(ingestionResult);
-            }
-            ProgressUI.onUnzipSuccess();
+                ProgressUI.onUnzipSuccess();
+                ProgressUI.onStudentIdKnown(ingestionResult.getStudentId());
 
-            for (IngestionResult ingestionResult : ingestionResults) {
-                // ============ Anomalies Detection ============
                 anomalyList.addAll(ingestionResult.getAnomalies());
 
                 System.out.println("Ingested submission for: " + ingestionResult.getStudentId());
@@ -88,24 +84,30 @@ public class GradingPipeline {
                     String questionName = testerFileName.replace("Tester", "");
 
                     // Injecting and overriding tester files in the submissions
+                    ProgressUI.onCopyTestFile(testerFile.getName());
                     this.testInjector.injectTesters(testerFile.getName(), questionDir);
+                    ProgressUI.onCopyTestFileSuccess();
 
                     // Compile results
+                    ProgressUI.onComplieFile(testerFileName);
                     CompilationResult result = this.compiler.compile(submission, questionDir.getName());
                     if (!result.isSuccess()) {
                         System.out.println("Compilation failed: " + result.getOutput());
                     } else {
                         System.out.println("[SUCCESS] Compiled " + questionDir.getName() + " for " + submission.getStudentId());
                     }
-
+                    ProgressUI.onComplieFileSuccess();
+                    
                     ProcessResult runResult = ProcessRunner.run(new ArrayList<>(List.of(
                         "java", "-cp", 
                         new File(questionDir, "classes").getAbsolutePath() + File.pathSeparator + questionDir.getAbsolutePath(), 
                         testerFileName
                     )), config.getTimeout());
 
+                    ProgressUI.onEvaluate(questionName);
                     QuestionScore questionScore = Evaluator.evaluate(questionName, runResult.getOutput());
                     grade.addQuestionScore(questionScore);
+                    ProgressUI.onEvaluateSuccess();
                 }
 
                 // Attaching all source codes into one chunk of string to process plagiarism
@@ -119,12 +121,10 @@ public class GradingPipeline {
 
                 codeById.put(submission.getStudentId(), sourceCode);
                 grades.add(grade);
-                ProgressUI.addBarValue();
+                ProgressUI.onStudentDone();
             }
-            ProgressUI.onCopyTestFilesSuccess();
-            ProgressUI.onEvaluateSuccess();
             
-            // All plagiarism pairs has a opposite pair instance, numOfComparison = n(n-1)/2
+            // numOfComparison pairs = n(n-1)/2
             ProgressUI.onPlagiarismCheck(grades.size() * (grades.size() - 1) / 2); 
             List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById);
             ProgressUI.completeBar();
@@ -132,7 +132,8 @@ public class GradingPipeline {
 
             // Adding plagiarism flags to each grade
             for (FinalGrade grade : grades) {
-                // Only check A. All plagiarism pairs has a opposite pair version
+                // Only check A to avoid double counting on subsequent grades where they already have
+                // a previous occurence with another grade
                 for (PlagiarismResult flag : flags) {
                     if (grade.getStudentId().equals(flag.getStudentA())) {
                         grade.addPlagiarismFlag(flag);

@@ -10,16 +10,17 @@ public class Main {
         System.out.println("Starting Application...");
         
         try {
-            Config config = new Config();
-
+            // Init the Ui window
             ProgressUI.setupUI();
             ProgressUI.setFrameVisibility(true);
+
+            Config config = new Config();
 
             GradingPipeline pipeline = new GradingPipeline(config);
             pipeline.run();
             ProgressUI.onProgramCompleted();
         } catch (Exception e) {
-            System.out.println("An error occurred: " + e.getMessage());
+            ProgressUI.setErrorText("An error occurred: " + e.getMessage());
             ProgressUI.onProgramError();
         }
     }

@@ -206,7 +206,7 @@ public class ProgressUI {
     }
 
     public static void onEvaluateSuccess(){
-        System.err.println("Evulate succes " );
+        System.err.println("Evaulate success " );
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
