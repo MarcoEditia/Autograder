@@ -56,6 +56,9 @@ public class GradingPipeline {
                 // Ensures file is a zip file
                 if (!zip.getFileName().toString().toLowerCase().endsWith(".zip")) continue;
 
+                ProgressUI.onStudentStart(zip.getFileName().toString());
+                ProgressUI.onUnzip();
+
                 // ============ Ingestion ============
                 IngestionResult ingestionResult = SubmissionCleaner.processSubmission(zip, config.getCleanStudentSubmissionPath());
                 ProgressUI.onUnzipSuccess();
@@ -95,8 +98,8 @@ public class GradingPipeline {
                         System.out.println("Compilation failed: " + result.getOutput());
                     } else {
                         System.out.println("[SUCCESS] Compiled " + questionDir.getName() + " for " + submission.getStudentId());
+                        ProgressUI.onComplieFileSuccess();
                     }
-                    ProgressUI.onComplieFileSuccess();
                     
                     ProcessResult runResult = ProcessRunner.run(new ArrayList<>(List.of(
                         "java", "-cp", 

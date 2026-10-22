@@ -201,12 +201,12 @@ public class ProgressUI {
     }
 
     public static void onEvaluate(String questionName){
-        System.err.println("Evaludate " + questionName);
+        System.err.println("Evaluate " + questionName);
         progressText.setText("Marking " + questionName);
     }
 
     public static void onEvaluateSuccess(){
-        System.err.println("Evaulate success " );
+        System.err.println("Evaluate success " );
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
