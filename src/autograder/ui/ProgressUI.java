@@ -2,37 +2,35 @@ package autograder.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.io.File;
+import java.io.IOException;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 public class ProgressUI {
     private static JFrame mainFrame;
-    private static JPanel barPanel;
-    private static JPanel sidePanel;
-    private static JPanel innerSidePanel;
+    private static JPanel barPanel, sidePanel, innerSidePanel, exportPanel, openFilePanel;
     private static JProgressBar bar;
-    private static JLabel title;
-    private static JLabel sideTextZip;
-    private static JLabel sideTextCopy;
-    private static JLabel sideTextComplie;
-    private static JLabel sideTextEvaluate;
-    private static JLabel sideTextPlagiarism;
-    private static JLabel sideTextReport;
-    private static JLabel studentCounterText;
-    private static JLabel progressText;
-    private static JLabel errorText;
+    private static JLabel title, sideTextZip, sideTextCopy, sideTextComplie, sideTextEvaluate, 
+    sideTextPlagiarism, sideTextReport, studentCounterText, progressText, questionText;
+    private static JTextArea errorText;
     private static GridBagConstraints gbc;
-
+    private static JButton exportPDF, exportHTML, openReport, openCSV;
     private static int totalStudents = 0;
     private static int studentCounter = 1;
 
@@ -94,7 +92,14 @@ public class ProgressUI {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        errorText = new JLabel();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        errorText = new JTextArea();
+        errorText.setAlignmentX(0.5f);
+        errorText.setOpaque(false);
+        errorText.setLineWrap(true);
+        errorText.setEditable(false);
+        errorText.setWrapStyleWord(true);
         errorText.setForeground(Color.RED);
         errorText.setFont(new Font("Arial", 0, 15));
         barPanel.add(errorText, gbc);
@@ -107,6 +112,8 @@ public class ProgressUI {
         bar.setPreferredSize(new Dimension(500, 30));
 
         barPanel.add(bar, gbc);
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.0;
 
         gbc.gridy = 2;
         studentCounterText = new JLabel();
@@ -119,10 +126,91 @@ public class ProgressUI {
         progressText.setFont(new Font("Arial", 0, 12));
 
         barPanel.add(progressText, gbc);
+
+        gbc.gridy = 4;
+        questionText = new JLabel("Which report format to export?");
+        questionText.setVisible(false);
+
+        barPanel.add(questionText, gbc);
+
+        gbc.gridy = 5;
+        exportPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
+        exportPanel.setOpaque(false);
+        exportPDF = new JButton("Export PDF");
+        exportPDF.addActionListener(e -> handlePdfClick());
+        exportHTML = new JButton("Export HTML");
+        exportHTML.addActionListener(e -> handleHtmlClick());
+        exportPanel.add(exportPDF);
+        exportPanel.add(exportHTML);
+        exportPanel.setVisible(false);
+        
+        barPanel.add(exportPanel, gbc);
+
+        openFilePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
+        openFilePanel.setOpaque(false);
+        openReport = new JButton("Open report");
+        openReport.addActionListener(e -> handleOpenFile(true));
+        openCSV = new JButton("Open CSV");
+        openCSV.addActionListener(e -> handleOpenFile(false));
+        openFilePanel.add(openReport);
+        openFilePanel.add(openCSV);
+        openFilePanel.setVisible(false);
+
+        barPanel.add(openFilePanel, gbc);
         
         mainFrame.add(title, BorderLayout.NORTH);
         mainFrame.add(barPanel, BorderLayout.CENTER);
         mainFrame.add(sidePanel, BorderLayout.WEST);
+    }
+
+    private static void handlePdfClick(){
+        System.out.println("PDF");
+    }
+
+    private static void handleHtmlClick(){
+        System.out.println("HTML");
+    }
+
+    private static void handleOpenFile(boolean openReport){
+        String filePath = "";
+        if (openReport) {
+            File folder = new File("reports");
+            if (!folder.exists() || !folder.isDirectory()) {
+                setErrorText("Unable to locate file");
+                return;
+            }
+
+            File[] allFiles = folder.listFiles();
+            if (allFiles != null) {
+                for (File file : allFiles) {
+                    if (file.isFile()) {
+                        if (file.getName().endsWith(".pdf") || file.getName().endsWith(".html")) {
+                            filePath = file.getName();
+                            break;
+                        }
+                    }
+                }
+            }
+        }else{
+            filePath = "reports/scoresheet.csv";
+        }
+
+        try{
+            File file = new File(filePath);
+            if(!file.exists()){
+                setErrorText("File not found at " + filePath);
+                return;
+            }
+
+            if(Desktop.isDesktopSupported()){
+                Desktop desktop = Desktop.getDesktop();
+                desktop.open(file);
+            }else{
+                setErrorText("Desktop operations are not supported in this OS");
+            }
+        }catch(IOException exception){
+            errorText.setText("Error opening file: " + exception.getMessage());
+        }
     }
 
     public static void setFrameVisibility(boolean visibility){
@@ -145,6 +233,7 @@ public class ProgressUI {
 
     public static void setErrorText(String errorMsg){
         errorText.setText(errorMsg);
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
     public static void clearErrorText(){
@@ -230,6 +319,11 @@ public class ProgressUI {
         sideTextPlagiarism.setForeground(Color.GREEN);
     }
 
+    public static void beforeGenerateReport(){
+        questionText.setVisible(true);
+        exportPanel.setVisible(true);
+    }
+
     public static void onGenerateReport(){
         resetBar();
         progressText.setText("Generating report...");
@@ -244,10 +338,6 @@ public class ProgressUI {
 
     public static void onProgramCompleted(){
         progressText.setText("Program completed. Please refer to Report and CSV for more details.");
-        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    }
-
-    public static void onProgramError(){
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }
