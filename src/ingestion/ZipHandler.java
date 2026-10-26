@@ -68,7 +68,7 @@ public final class ZipHandler {
     /**
      * Unzips the archive into targetDirectory, automatically stripping any top-level wrapper.
      */
-    public static void unzip(Path zipFilePath, Path targetDirectory) throws IOException {
+    public static void unzip(Path zipFilePath, Path targetDirectory, List<Anomaly> anomalies) throws IOException {
         Path destination = targetDirectory.toAbsolutePath().normalize();
         Files.createDirectories(destination);
 
@@ -111,6 +111,7 @@ public final class ZipHandler {
                 }
             }
         }
+        markStructuralAnomaliesResolved(anomalies);
     }
 
     private static Set<String> getTopLevelNames(List<? extends ZipEntry> entries) {
@@ -179,4 +180,29 @@ public final class ZipHandler {
                 || fileName.equals(".DS_Store")
                 || fileName.startsWith("._");
     }
+
+    private static void markStructuralAnomaliesResolved(List<Anomaly> anomalies) {
+        for (int i = 0; i < anomalies.size(); i++) {
+            Anomaly a = anomalies.get(i);
+            String resMessage = null;
+
+            if (a.getType() == Anomaly.Type.FLATTENED_HIERARCHY) {
+                resMessage = "Auto-Repaired: Normalized flattened question directories into student folder";
+            } else if (a.getType() == Anomaly.Type.UNRENAMED_FOLDER) {
+                resMessage = "Auto-Repaired: Stripped default resource wrapper folder during extraction";
+            } else if (a.getType() == Anomaly.Type.INCORRECT_FOLDER) {
+                resMessage = "Auto-Repaired: Stripped mismatched wrapper folder and mapped contents to student ID";
+            }
+
+            if (resMessage != null) {
+                anomalies.set(i, new Anomaly(
+                    a.studentId(),
+                    a.getType(),
+                    a.getDetails(),
+                    resMessage
+                ));
+            }
+        }
+    }
 }
+

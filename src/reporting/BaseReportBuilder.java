@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BaseReportBuiler {
+public abstract class BaseReportBuilder {
     public final void generateReport(List<FinalGrade> grades, String outputPath) throws IOException{
         File outputFile = new File(outputPath);
         File parentDir = outputFile.getParentFile();

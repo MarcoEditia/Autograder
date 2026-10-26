@@ -21,7 +21,6 @@ public class Main {
             ProgressUI.onProgramCompleted();
         } catch (Exception e) {
             ProgressUI.setErrorText("An error occurred: " + e.getMessage());
-            ProgressUI.onProgramError();
         }
     }
 }

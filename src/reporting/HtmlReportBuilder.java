@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class HtmlAnomalyBuilder extends BaseReportBuiler{
+public class HtmlReportBuilder extends BaseReportBuilder{
 
     private static final HtmlView<ReportData> VIEW = HtmlFlow.view(page -> page
         .html()
@@ -62,6 +62,14 @@ public class HtmlAnomalyBuilder extends BaseReportBuiler{
                         .div().attrClass("metric-card")
                             .div().attrClass("label").text("Median Score").__()
                             .div().attrClass("value").text(String.format("%.1f", data.getMedianScore())).__()
+                        .__()
+                        .div().attrClass("metric-card")
+                            .div().attrClass("label").text("Lowest Score").__()
+                            .div().attrClass("value").text(String.format("%.1f", data.getMinScore())).__()
+                        .__()
+                        .div().attrClass("metric-card")
+                            .div().attrClass("label").text("Highest Score").__()
+                            .div().attrClass("value").text(String.format("%.1f", data.getMaxScore())).__()
                         .__()
                     )
                 .__() // metrics-grid
@@ -136,6 +144,8 @@ public class HtmlAnomalyBuilder extends BaseReportBuiler{
                 .<ReportData>dynamic((container, data) -> {
                     Map<Anomaly.Type, List<Anomaly>> grouped = data.getAnomalies().stream()
                             .collect(Collectors.groupingBy(Anomaly::getType));
+
+                    IO.print(grouped.values());
 
                     for (Anomaly.Type type : Anomaly.Type.values()) {
                         List<Anomaly> typeAnomalies = grouped.getOrDefault(type, Collections.emptyList());

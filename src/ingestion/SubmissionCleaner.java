@@ -57,7 +57,7 @@ public final class SubmissionCleaner {
         // Prepare student directory in clean-student-submission and unzip
         Path studentDirectory = targetDirectory.toAbsolutePath().normalize().resolve(studentId);
         Files.createDirectories(studentDirectory);
-        ZipHandler.unzip(zipFilePath, studentDirectory);
+        ZipHandler.unzip(zipFilePath, studentDirectory, anomalies);
 
         // Inspect missing directories and required source files
         anomalies.addAll(validateRequiredFiles(studentDirectory, studentId));
@@ -114,6 +114,8 @@ public final class SubmissionCleaner {
             List<Path> javaFiles = stream
                     .filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().endsWith(".java"))
+                    .filter(path -> !path.getFileName().toString().endsWith("Tester.java"))
+                    .filter(path -> !path.getFileName().toString().endsWith("Comparators.java"))
                     .filter(path -> !isMacOsMetadata(path))
                     .toList();
 
@@ -125,30 +127,35 @@ public final class SubmissionCleaner {
 
                 // Detect anomaly before modifying
                 if (!hasValidHeader) {
-                    anomalies.add(new Anomaly(
-                        studentId,
-                        Anomaly.Type.MISSING_HEADER,
-                        "Missing or malformed header comment in " + studentDirectory.relativize(javaFile)
-                    ));
+                    try {
+                        // 1. Attempt the file repair first
+                        String updatedContent = hasHeaderBlock 
+                                ? standardHeader + "\n" + content.substring(matcher.end()).stripLeading() 
+                                : standardHeader + "\n\n" + content;
 
-                    // Inject standard header
-                    Files.writeString(javaFile, standardHeader + "\n\n" + content);
+                        Files.writeString(javaFile, updatedContent);
+
+                        // 2. Add anomaly WITH resolution ONLY after write succeeds
+                        anomalies.add(new Anomaly(
+                            studentId, 
+                            Anomaly.Type.MISSING_HEADER, 
+                            "Missing or malformed header comment in " + studentDirectory.relativize(javaFile),
+                            "Auto-Repaired: Injected standard header block"
+                        ));
+                    } catch (IOException e) {
+                        // 3. If repair fails, log as UNRESOLVED (3-argument constructor) so it tags "Requires Review"
+                        anomalies.add(new Anomaly(
+                            studentId, 
+                            Anomaly.Type.MISSING_HEADER, 
+                            "Missing header in " + studentDirectory.relativize(javaFile) + " (Auto-repair failed: " + e.getMessage() + ")"
+                        ));
+                    }
                 }
+                
+            } 
 
-                String updatedContent;
-                if (hasHeaderBlock) {
-                    // Strip the matched header block (valid, partial, or completely empty)
-                    updatedContent = standardHeader + "\n" + content.substring(matcher.end()).stripLeading();
-                } else {
-                    // No comment block existed at all
-                    updatedContent = standardHeader + "\n\n" + content;
-                }
-
-                Files.writeString(javaFile, updatedContent);
-            }
+            return anomalies;
         }
-
-        return anomalies;
     }
 
     private static boolean hasHeaderValue(Pattern pattern, String header) {

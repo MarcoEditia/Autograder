@@ -88,12 +88,24 @@ public final class Anomaly {
 
     @Override
     public String toString() {
-        return String.format("[%s] [%s] StudentId: [%s] | %s - %s",
-                getSeverity(),
-                type.name(),
-                studentId,
-                type.getLabel(),
-                details);
+        if (isResolved()) {
+            return String.format("✔ [AUTO-REPAIRED] [%s] Student: %s | %s (%s) -> %s",
+                    getSeverity(),
+                    studentId,
+                    type.getLabel(),
+                    details,
+                    getResolution()
+            );
+        } else {
+            String statusSymbol = (getSeverity() == Severity.ERROR) ? "✖" : "⚠";
+            return String.format("%s [REQUIRES REVIEW] [%s] Student: %s | %s (%s)",
+                    statusSymbol,
+                    getSeverity(),
+                    studentId,
+                    type.getLabel(),
+                    details
+            );
+        }
     }
 }
 

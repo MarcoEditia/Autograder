@@ -14,7 +14,7 @@ public class ReportData {
     private final double maxScore;
     private final double minScore;
 
-    public ReportData(List<FinalGrade> grades, List<Anomaly> anomalies ,List<PlagiarismResult> plagiarismResults) {
+    public ReportData(List<FinalGrade> grades, List<Anomaly> anomalies, List<PlagiarismResult> plagiarismResults) {
         this.anomalies = anomalies;
         this.grades = grades;
         this.plagiarismResults = plagiarismResults;

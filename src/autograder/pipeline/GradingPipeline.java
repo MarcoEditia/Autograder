@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.*;
-import reporting.HtmlAnomalyBuilder;
+import reporting.HtmlReportBuilder;
 import scoring.Evaluator;
 
 public class GradingPipeline {
@@ -152,7 +152,7 @@ public class GradingPipeline {
                     new ReportData(grades, anomalyList, flags), 
                     config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename()
                 );
-                HtmlAnomalyBuilder htmlAnomalyBuilder = new HtmlAnomalyBuilder();
+                HtmlReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder();
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
