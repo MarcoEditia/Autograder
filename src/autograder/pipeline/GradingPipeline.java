@@ -73,9 +73,7 @@ public class GradingPipeline {
                 
                 Submission submission = new Submission(ingestionResult.getStudentId(), ingestionResult.getStudentName(), ingestionResult.getCleanSubmissionDirectory().toString());
                 FinalGrade grade = new FinalGrade(submission.getStudentId(), submission.getName());
-                for (Anomaly anomaly : ingestionResult.getAnomalies()) {
-                    grade.addAnomaly(anomaly);
-                }
+                grade.addAnomalies(ingestionResult.getAnomalies());
 
                 // ============ Execution ============
                 for (File testerFile : testerFilesFolder.listFiles()) {

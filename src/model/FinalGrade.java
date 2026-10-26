@@ -41,8 +41,11 @@ public class FinalGrade {
         this.questionScore.add(score);
     }
 
-    public void addAnomaly(Anomaly anomaly){
+    public void addAnomaly(Anomaly anomaly){ // might need to remove
         this.anomalies.add(anomaly);
+    }
+    public void addAnomalies(List<Anomaly> anomalies){
+        this.anomalies.addAll(anomalies);
     }
     public void addPlagiarismFlag(PlagiarismResult flag){
         this.plagiarismFlags.add(flag);

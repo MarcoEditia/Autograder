@@ -8,10 +8,11 @@ import model.FinalGrade;
 import model.PlagiarismResult;
 import model.ReportData;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.EnumMap;
 
 public class HtmlReportBuilder extends BaseReportBuilder{
 
@@ -47,13 +48,13 @@ public class HtmlReportBuilder extends BaseReportBuilder{
             .body()
                 .h1().text("AutoGrader Cohort Master Report").__()
 
-                // --- Section 1: Summary Analytics ---
+                // Section 1: Summary Analytics
                 .h2().text("Cohort Score Summary").__()
                 .div().attrClass("metrics-grid")
                     .<ReportData>dynamic((grid, data) -> grid
                         .div().attrClass("metric-card")
                             .div().attrClass("label").text("Total Submissions").__()
-                            .div().attrClass("value").text(String.valueOf(data.getGrades().size())).__()
+                            .div().attrClass("value").text(String.valueOf(grades(data).size())).__()
                         .__()
                         .div().attrClass("metric-card")
                             .div().attrClass("label").text("Average Score").__()
@@ -74,7 +75,7 @@ public class HtmlReportBuilder extends BaseReportBuilder{
                     )
                 .__() // metrics-grid
 
-                // --- Section 2: Master Student Gradebook ---
+                // Section 2: Master Student Gradebook
                 .h2().text("Student Gradebook").__()
                 .table()
                     .thead()
@@ -87,25 +88,50 @@ public class HtmlReportBuilder extends BaseReportBuilder{
                     .__()
                     .tbody()
                         .<ReportData>dynamic((tbody, data) -> {
-                            for (FinalGrade grade : data.getGrades()) {
+                            List<FinalGrade> grades = grades(data);
+
+                            if (grades.isEmpty()) {
+                                tbody.tr()
+                                    .td().attrColspan(4)
+                                        .attrClass("empty-row")
+                                        .text("No student grades available.")
+                                    .__()
+                                .__();
+                                return;
+                            }
+
+                            for (FinalGrade grade : grades) {
                                 boolean hasFlags = (grade.getPlagiarismFlags() != null && !grade.getPlagiarismFlags().isEmpty())
                                         || (grade.getAnomalies() != null && !grade.getAnomalies().isEmpty());
 
-                                String statusBadge = hasFlags ? "badge badge-warning" : "badge badge-success";
-                                String statusText = hasFlags ? "FLAGGED" : "CLEAN";
+                                String statusBadge = hasFlags 
+                                    ? "badge badge-warning" 
+                                    : "badge badge-success";
+                                
+                                String statusText = hasFlags 
+                                    ? "FLAGGED" 
+                                    : "CLEAN";
 
                                 tbody.tr()
-                                        .td().span().attrClass("code-snippet").text(grade.getStudentId()).__().__()
-                                        .td().text(grade.getName()).__()
-                                        .td().text(String.format("%.1f", grade.getTotalScore())).__()
-                                        .td().span().attrClass(statusBadge).text(statusText).__().__()
+                                        .td()
+                                            .span().attrClass("code-snippet")
+                                                .text(grade.getStudentId()).__()
+                                            .__()
+                                        .td()
+                                            .text(grade.getName()).__()
+                                        .td()
+                                            .text(String.format("%.1f", grade.getTotalScore())).__()
+                                        .td()
+                                            .span().attrClass(statusBadge)
+                                                .text(statusText).__()
+                                            .__()
                                      .__();
                             }
                         })
                     .__()
                 .__() // table
 
-                // --- Section 3: Plagiarism Alerts ---
+                // Section 3: Plagiarism Alerts 
                 .h2().text("Plagiarism & Code Similarity Flags").__()
                 .table()
                     .thead()
@@ -121,14 +147,22 @@ public class HtmlReportBuilder extends BaseReportBuilder{
                     .tbody()
                         .<ReportData>dynamic((tbody, data) -> {
                             List<PlagiarismResult> flags = data.getPlagiarismResults();
+
                             if (flags == null || flags.isEmpty()) {
-                                tbody.tr().td().attrColspan(6).text("No code similarity alerts recorded.").__().__();
+                                tbody.tr()
+                                    .td().attrColspan(6)
+                                        .text("No code similarity alerts recorded.").__()
+                                    .__();
                             } else {
                                 for (PlagiarismResult flag : flags) {
                                     tbody.tr()
-                                            .td().span().attrClass("code-snippet").text(flag.getStudentA()).__().__()
+                                            .td().span().attrClass("code-snippet")
+                                                    .text(flag.getStudentA()).__()
+                                                .__()
                                             .td().text(data.lookupStudentName(flag.getStudentA())).__()
-                                            .td().span().attrClass("code-snippet").text(flag.getStudentB()).__().__()
+                                            .td().span().attrClass("code-snippet")
+                                                    .text(flag.getStudentB()).__()
+                                                .__()
                                             .td().text(data.lookupStudentName(flag.getStudentB())).__()
                                             .td().text(String.format("%.2f%%", flag.getSimilarityScore() * 100)).__()
                                             .td().span().attrClass("badge badge-danger").text("FLAGGED").__().__()
@@ -139,27 +173,49 @@ public class HtmlReportBuilder extends BaseReportBuilder{
                     .__()
                 .__() // table
 
-                // --- Section 4: Categorized Anomaly Banners ---
+                // Section 4: Categorized Anomaly Banners
                 .h2().text("Ingestion & Structural Anomalies").__()
                 .<ReportData>dynamic((container, data) -> {
-                    Map<Anomaly.Type, List<Anomaly>> grouped = data.getAnomalies().stream()
-                            .collect(Collectors.groupingBy(Anomaly::getType));
-
-                    IO.print(grouped.values());
+                    Map<Anomaly.Type, List<Anomaly>> grouped = 
+                        new EnumMap<>(Anomaly.Type.class);
 
                     for (Anomaly.Type type : Anomaly.Type.values()) {
-                        List<Anomaly> typeAnomalies = grouped.getOrDefault(type, Collections.emptyList());
+                        grouped.put(type, new ArrayList<>());
+                    }
+
+                    List<Anomaly> anomalies = data.getAnomalies();
+
+                    if (anomalies != null) {
+                        for (Anomaly anomaly : anomalies) {
+                            if (anomaly != null && anomaly.getType() != null) {
+                                grouped.get(anomaly.getType()).add(anomaly);
+                            }
+                        }
+                    }
+
+                    for (Anomaly.Type type : Anomaly.Type.values()) {
+                        List<Anomaly> typeAnomalies =
+                            grouped.getOrDefault(type, Collections.emptyList());
 
                         container.div().attrClass("category-banner")
-                            .div().attrClass(typeAnomalies.isEmpty() ? "banner-header clean" : "banner-header")
+                            .div().attrClass(
+                                typeAnomalies.isEmpty() 
+                                    ? "banner-header clean" 
+                                    : "banner-header")
                                 .span().text(type.getLabel()).__()
-                                .span().attrClass("count-pill").text(typeAnomalies.size() + " Issues").__()
+                                .span().attrClass("count-pill")
+                                    .text(
+                                        typeAnomalies.size() 
+                                        + (typeAnomalies.size() == 1
+                                            ? " Issue"
+                                            : " Issues"))
+                                        .__()
                             .__() // banner-header
                             .div()
                                 .of(body -> {
                                     if (typeAnomalies.isEmpty()) {
                                         body.div().attrClass("no-errors")
-                                            .text("✔ No issues recorded for " + type.getLabel() + ".")
+                                            .text("No issues recorded for " + type.getLabel() + ".")
                                         .__();
                                     } else {
                                         body.table()
@@ -175,24 +231,31 @@ public class HtmlReportBuilder extends BaseReportBuilder{
                                             .tbody()
                                                 .of(tbody -> {
                                                     for (Anomaly a : typeAnomalies) {
-                                                        String sevBadge = a.getSeverity() == Anomaly.Severity.ERROR 
-                                                                ? "badge badge-danger" 
+                                                        String sevBadge = a.getSeverity() == Anomaly.Severity.ERROR
+                                                                ? "badge badge-danger"
                                                                 : "badge badge-warning";
-                                                        
-                                                        String resBadge = a.isResolved() 
-                                                                ? "badge badge-success" 
+
+                                                        String resBadge = a.isResolved()
+                                                                ? "badge badge-success"
                                                                 : "badge badge-info";
 
                                                         tbody.tr()
-                                                            .td().span().attrClass("code-snippet").text(a.studentId()).__().__()
+                                                            .td().span().attrClass("code-snippet")
+                                                                .text(a.studentId()).__()
+                                                            .__()
                                                             .td().text(data.lookupStudentName(a.studentId())).__()
-                                                            .td().span().attrClass(sevBadge).text(a.getSeverity().name()).__().__()
+                                                            .td().span().attrClass(sevBadge)
+                                                                .text(a.getSeverity().name()).__()
+                                                            .__()
                                                             .td().text(a.getDetails()).__()
-                                                            .td().span().attrClass(resBadge).text(a.getResolution()).__().__()
+                                                            .td().span().attrClass(resBadge)
+                                                                .text(a.getResolution()).__()
+                                                                .__()
                                                         .__();
                                                     }
                                                 })
-                                            .__(); // tbody
+                                            .__()  // Close tbody
+                                        .__();   // Close table
                                     }
                                 })
                             .__() // banner body
@@ -205,6 +268,12 @@ public class HtmlReportBuilder extends BaseReportBuilder{
     @Override
     protected String buildContent(ReportData data){
         return VIEW.render(data);
+    }
+
+    private static List<FinalGrade> grades(ReportData data) {
+        return data.getGrades() == null
+            ? Collections.emptyList()
+            : data.getGrades();
     }
 
 }

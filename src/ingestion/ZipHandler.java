@@ -38,8 +38,10 @@ public final class ZipHandler {
             boolean missingRootUsernameFolder = topLevelNames.stream().anyMatch(name -> QUESTION_FOLDER_PATTERN.matcher(name).matches());
             // Anomaly 2: has unrenamed template folder name
             boolean unrenamedRootFolder = topLevelNames.stream().anyMatch(name -> name.equalsIgnoreCase(DEFAULT_RESOURCE_FOLDER) || name.equalsIgnoreCase("RenameToYourStudentID"));
-            // Anomaly 3: Random / wrong root folder name
-            boolean incorrectRootFolder = topLevelNames.stream().noneMatch(name -> (name.equalsIgnoreCase(studentId)));
+            // Anomaly 3: Random / wrong root folder name + prevented possible logic bug if the order of the var changes
+            boolean incorrectRootFolder = !missingRootUsernameFolder 
+                            && !unrenamedRootFolder 
+                            && topLevelNames.stream().noneMatch(name -> name.equalsIgnoreCase(studentId));
             
             if (missingRootUsernameFolder) {
                 detectedAnomalies.add(new Anomaly(
@@ -54,10 +56,11 @@ public final class ZipHandler {
                     "Zip contains default unrenamed template folder '" + DEFAULT_RESOURCE_FOLDER + "'"
                 ));
             } else if (incorrectRootFolder) {
+                String folderNames = String.join(", ", topLevelNames);
                 detectedAnomalies.add(new Anomaly(
                     studentId,
                     Anomaly.Type.INCORRECT_FOLDER,
-                    "Zip contains default incorrect root folder '" + topLevelNames +  "'"
+                    "Zip contains default incorrect root folder '" + folderNames +  "'"
                 ));
             }
         }
