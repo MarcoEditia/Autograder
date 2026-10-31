@@ -1,6 +1,7 @@
 package analytics;
 
 import model.PlagiarismResult;
+import autograder.ui.ProgressUI;
 import java.util.*;
 
 public class PlagiarismEngine {
@@ -29,6 +30,7 @@ public class PlagiarismEngine {
                 if (score > 0.75) {
                     allFlaggedPairs.add(new PlagiarismResult(a, b, score));
                 }
+                ProgressUI.addBarValue();
             }
         }
         return allFlaggedPairs;

@@ -128,7 +128,6 @@ public class GradingPipeline {
             // numOfComparison pairs = n(n-1)/2
             ProgressUI.onPlagiarismCheck(grades.size() * (grades.size() - 1) / 2); 
             List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById);
-            ProgressUI.completeBar();
             ProgressUI.onPlagiarismSuccess();
 
             // Adding plagiarism flags to each grade
@@ -154,7 +153,9 @@ public class GradingPipeline {
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
-                ProgressUI.onGenerateReportSuccess();
+                ProgressUI.onGenerateReportSuccess(config.getGeneratedReportPath().toString(), 
+                config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename(),
+                config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename());
             } catch (IOException e) {
                 ProgressUI.setErrorText("IOError while generating reports: " + e.getMessage());
             }

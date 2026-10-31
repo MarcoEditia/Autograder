@@ -24,15 +24,16 @@ import javax.swing.border.EmptyBorder;
 
 public class ProgressUI {
     private static JFrame mainFrame;
-    private static JPanel barPanel, sidePanel, innerSidePanel, exportPanel, openFilePanel;
+    private static JPanel barPanel, sidePanel, innerSidePanel, openFilePanel;
     private static JProgressBar bar;
     private static JLabel title, sideTextZip, sideTextCopy, sideTextComplie, sideTextEvaluate, 
     sideTextPlagiarism, sideTextReport, studentCounterText, progressText, questionText;
     private static JTextArea errorText;
     private static GridBagConstraints gbc;
-    private static JButton exportPDF, exportHTML, openReport, openCSV;
+    private static JButton openReport, openCSV;
     private static int totalStudents = 0;
     private static int studentCounter = 1;
+    private static String reportsFolder, fullReportFilePath, fullCsvFilePath;
 
     public static void main(String[] args) {
         // main method for testing only
@@ -128,23 +129,12 @@ public class ProgressUI {
         barPanel.add(progressText, gbc);
 
         gbc.gridy = 4;
-        questionText = new JLabel("Which report format to export?");
+        questionText = new JLabel("Do you want to open HTML report or CSV?");
         questionText.setVisible(false);
 
         barPanel.add(questionText, gbc);
 
         gbc.gridy = 5;
-        exportPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
-        exportPanel.setOpaque(false);
-        exportPDF = new JButton("Export PDF");
-        exportPDF.addActionListener(e -> handlePdfClick());
-        exportHTML = new JButton("Export HTML");
-        exportHTML.addActionListener(e -> handleHtmlClick());
-        exportPanel.add(exportPDF);
-        exportPanel.add(exportHTML);
-        exportPanel.setVisible(false);
-        
-        barPanel.add(exportPanel, gbc);
 
         openFilePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
         openFilePanel.setOpaque(false);
@@ -163,42 +153,22 @@ public class ProgressUI {
         mainFrame.add(sidePanel, BorderLayout.WEST);
     }
 
-    private static void handlePdfClick(){
-        System.out.println("PDF");
-    }
-
-    private static void handleHtmlClick(){
-        System.out.println("HTML");
-    }
-
     private static void handleOpenFile(boolean openReport){
-        String filePath = "";
-        if (openReport) {
-            File folder = new File("reports");
-            if (!folder.exists() || !folder.isDirectory()) {
-                setErrorText("Unable to locate file");
-                return;
-            }
-
-            File[] allFiles = folder.listFiles();
-            if (allFiles != null) {
-                for (File file : allFiles) {
-                    if (file.isFile()) {
-                        if (file.getName().endsWith(".pdf") || file.getName().endsWith(".html")) {
-                            filePath = file.getName();
-                            break;
-                        }
-                    }
-                }
-            }
-        }else{
-            filePath = "reports/scoresheet.csv";
+        File folder = new File(reportsFolder);
+        if (!folder.exists() || !folder.isDirectory()) {
+            setErrorText("Unable to locate reports folder");
+            return;
         }
 
         try{
-            File file = new File(filePath);
+            File file;
+            if(openReport){
+                file = new File(fullReportFilePath);
+            }else{
+                file = new File(fullCsvFilePath);
+            }
             if(!file.exists()){
-                setErrorText("File not found at " + filePath);
+                setErrorText("File not found at " + file.getPath());
                 return;
             }
 
@@ -206,9 +176,9 @@ public class ProgressUI {
                 Desktop desktop = Desktop.getDesktop();
                 desktop.open(file);
             }else{
-                setErrorText("Desktop operations are not supported in this OS");
+                setErrorText("Desktop operations are not supported in this OS. Please open manually");
             }
-        }catch(IOException exception){
+        }catch(Exception exception){
             errorText.setText("Error opening file: " + exception.getMessage());
         }
     }
@@ -280,28 +250,23 @@ public class ProgressUI {
     }
 
     public static void onComplieFile(String fileName){
-        System.err.println("On compile " + fileName);
         progressText.setText("Compiling and running file (" + fileName + ")");
     }
 
-    // call after processrunner is done
     public static void onComplieFileSuccess(){
         sideTextComplie.setForeground(Color.GREEN);
     }
 
     public static void onEvaluate(String questionName){
-        System.err.println("Evaluate " + questionName);
         progressText.setText("Marking " + questionName);
     }
 
     public static void onEvaluateSuccess(){
-        System.err.println("Evaluate success " );
         sideTextEvaluate.setForeground(Color.GREEN);
     }
 
     // call at the end of zip loop before processing next student
     public static void onStudentDone(){
-        System.err.println("on student done " + studentCounter);
         addBarValue();
         studentCounter ++;
     }
@@ -319,21 +284,21 @@ public class ProgressUI {
         sideTextPlagiarism.setForeground(Color.GREEN);
     }
 
-    public static void beforeGenerateReport(){
-        questionText.setVisible(true);
-        exportPanel.setVisible(true);
-    }
-
     public static void onGenerateReport(){
         resetBar();
         progressText.setText("Generating report...");
         bar.setMaximum(100);
     }
 
-    public static void onGenerateReportSuccess(){
+    public static void onGenerateReportSuccess(String reportsFolder, String fullReportPath, String fullCsvPath){
         completeBar();
         progressText.setText("Generating report completed");
         sideTextReport.setForeground(Color.GREEN);
+        questionText.setVisible(true);
+        openFilePanel.setVisible(true);
+        ProgressUI.reportsFolder = reportsFolder;
+        ProgressUI.fullReportFilePath = fullReportPath;
+        ProgressUI.fullCsvFilePath = fullCsvPath;
     }
 
     public static void onProgramCompleted(){
