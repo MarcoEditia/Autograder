@@ -47,6 +47,10 @@ public class Compiler {
     }
 
     public CompilationResult compile(File sourceDir, File outputDir) {
+        return compile(sourceDir, outputDir, null);
+    }
+
+    public CompilationResult compile(File sourceDir, File outputDir, String questionName) {
         //sourceDir is student folder that has the java files including the tester files injected
         //outputDir is the classes folder inside the student's working space
 
@@ -61,6 +65,15 @@ public class Compiler {
         List<File> javaFiles = new ArrayList<>();
         findJavaFiles(sourceDir, javaFiles);
         //get a list of java files based on its suffix. recursive
+
+        if (questionName != null){
+            javaFiles.removeIf(file -> {
+                String name = file.getName();
+                return !name.equals(questionName + ".java")
+                        && !name.equals(questionName + "Tester.java")
+                        && (name.endsWith("Tester.java") || name.matches("Q\\d+[a-zA-Z]?\\.java"));
+            });
+        }
 
         if (javaFiles.isEmpty()) {
             return new CompilationResult(false, "No .java files found in directory " + sourceDir.getPath());

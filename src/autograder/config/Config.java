@@ -17,6 +17,9 @@ public final class Config {
     private final String scoresReportFilename;
     private final String anomalyReportFilename;
 
+    private final int maxScore;
+    private final int passMark;
+
     private final long timeout;
 
     public Config() {
@@ -29,6 +32,9 @@ public final class Config {
         this.generatedReportPath = getPath(configProperties, "GENERATED_REPORT_PATH");
         this.scoresReportFilename = getString(configProperties, "SCORES_REPORT_FILENAME");
         this.anomalyReportFilename = getString(configProperties, "ANOMALY_REPORT_FILENAME");
+
+        this.maxScore = getInt(configProperties, "MAX_SCORE");
+        this.passMark = getInt(configProperties, "PASS_MARK");
 
         this.timeout = getLong(configProperties, "TIMEOUT");
     }
@@ -78,6 +84,19 @@ public final class Config {
             return Long.parseLong(rawTimeout);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(key + " configuration key is not a valid long type!");
+        }
+    }
+
+    private int getInt(Properties props, String key) {
+        String rawTimeout = props.getProperty(key);
+
+        if (rawTimeout == null || rawTimeout.trim().isEmpty()) {
+            throw new IllegalArgumentException(key + " configuration key is missing or empty!");
+        }
+        try {
+            return Integer.parseInt(rawTimeout);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(key + " configuration key is not a valid int type!");
         }
     }
 

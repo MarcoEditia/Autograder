@@ -44,6 +44,17 @@ public class GradingPipeline {
             List<Anomaly> anomalyList = new ArrayList<>();
             List<FinalGrade> grades = new ArrayList<>();
             Map<String, String> codeById = new HashMap<>();
+            List<String> skippedSubmissions = new ArrayList<>();
+            File[] testerFiles = testerFilesFolder.listFiles();
+            
+            if (testerFiles == null) throw new IOException("Cannot read the tester folder");
+            boolean hasTester = false;
+            for (File file : testerFiles){
+                if (file.isFile() && file.getName().endsWith("Tester.java")){
+                    hasTester = true;
+                }
+            }
+            if (!hasTester) throw new IOException("No official tester files found");
 
             // Setup UI: Base unzip progress bar
             int zipCount = 0;
@@ -59,6 +70,7 @@ public class GradingPipeline {
                 ProgressUI.onStudentStart(zip.getFileName().toString());
                 ProgressUI.onUnzip();
 
+                try {
                 // ============ Ingestion ============
                 IngestionResult ingestionResult = SubmissionCleaner.processSubmission(zip, config.getCleanStudentSubmissionPath());
                 ProgressUI.onUnzipSuccess();
@@ -77,23 +89,38 @@ public class GradingPipeline {
 
                 // ============ Execution ============
                 for (File testerFile : testerFilesFolder.listFiles()) {
-                    if (!testerFile.getName().endsWith(".java")) continue;
+                    if (!testerFile.isFile() || !testerFile.getName().endsWith(".java")) continue;
 
                     File questionDir = new File(submission.getFolderPath(), testerFile.getName().substring(0, 2));
                     // The name part of the tester files and the submission files (e.g. Q1a, QlaTester)
                     String testerFileName = testerFile.getName().replace(".java", "");
                     String questionName = testerFileName.replace("Tester", "");
 
+                    if (!new File(questionDir, questionName + ".java").isFile()){
+                        grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+                        continue;
+                    }
+
                     // Injecting and overriding tester files in the submissions
                     ProgressUI.onCopyTestFile(testerFile.getName());
-                    this.testInjector.injectTesters(testerFile.getName(), questionDir);
+                    if (!this.testInjector.injectTesters(testerFile.getName(), questionDir)){
+                        throw new IOException("Could not copy official tester " + testerFile.getName());
+                    }
                     ProgressUI.onCopyTestFileSuccess();
 
                     // Compile results
                     ProgressUI.onComplieFile(testerFileName);
                     CompilationResult result = this.compiler.compile(submission, questionDir.getName());
                     if (!result.isSuccess()) {
+                        Anomaly anomaly = new Anomaly(submission.getStudentId(), 
+                                Anomaly.Type.COMPILATION_FAILURE, 
+                                questionName + " received 0 marks; tests were not run. Compiler line numbers refer to the cleaned source" 
+                                + System.lineSeparator() + result.getOutput());
+                        anomalyList.add(anomaly);
+                        grade.addAnomaly(anomaly);
+                        grade.addQuestionScore(new QuestionScore(questionName, 0.0));
                         System.out.println("Compilation failed: " + result.getOutput());
+                        continue;
                     } else {
                         System.out.println("[SUCCESS] Compiled " + questionDir.getName() + " for " + submission.getStudentId());
                         ProgressUI.onComplieFileSuccess();
@@ -104,6 +131,29 @@ public class GradingPipeline {
                         new File(questionDir, "classes").getAbsolutePath() + File.pathSeparator + questionDir.getAbsolutePath(), 
                         testerFileName
                     )), config.getTimeout());
+
+                    if (runResult.isTimedOut()){
+                        Anomaly anomaly = new Anomaly(submission.getStudentId(), 
+                                Anomaly.Type.EXECUTION_TIMEOUT, 
+                                questionName + " exceeded " + config.getTimeout() + " seconds."
+                                + "The tester was stopped. Partial marks were not calculated automatically. Score awarded was 0.0; needs manual review"
+                                + System.lineSeparator() + runResult.getOutput());
+                        anomalyList.add(anomaly);
+                        grade.addAnomaly(anomaly);
+                        grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+                        continue;
+                    }
+
+                    if (!runResult.isSuccess()){
+                        Anomaly anomaly = new Anomaly(submission.getStudentId(), 
+                                Anomaly.Type.RUNTIME_ERROR, 
+                                questionName + " did not finish successfully. Awarded 0.0 score; needs manual review. "
+                                + "Exit code: " + runResult.getExitCode() + System.lineSeparator() + runResult.getOutput());
+                        anomalyList.add(anomaly);
+                        grade.addAnomaly(anomaly);
+                        grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+                        continue;
+                    }
 
                     ProgressUI.onEvaluate(questionName);
                     QuestionScore questionScore = Evaluator.evaluate(questionName, runResult.getOutput());
@@ -122,6 +172,12 @@ public class GradingPipeline {
 
                 codeById.put(submission.getStudentId(), sourceCode);
                 grades.add(grade);
+                } catch (IOException | SecurityException e){
+                    // A failed archive/submission does not abort the remaining batch.
+                    // It is skipped, rather than exported as an earned zero.
+                    skippedSubmissions.add(zip.getFileName() + ": " + e.getMessage());
+                    System.out.println("Skipped submission: " + zip.getFileName() + ": " + e.getMessage()); 
+                }
                 ProgressUI.onStudentDone();
             }
             
@@ -153,9 +209,18 @@ public class GradingPipeline {
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
+                Path skippedFile = config.getGeneratedReportPath().resolve("skipped-submissions.txt");
+                Files.write(skippedFile, skippedSubmissions);
                 ProgressUI.onGenerateReportSuccess(config.getGeneratedReportPath().toString(), 
                 config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename(),
                 config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename());
+                if (skippedSubmissions.isEmpty()) {
+                    ProgressUI.onProgramCompleted();
+                } else {
+                    ProgressUI.setErrorText("Reports generated for " + grades.size()
+                            + " submissions. Skipped " + skippedSubmissions.size()
+                            + "; see reports/skipped-submissions.txt. These students are absent from the scoresheet.");
+                }
             } catch (IOException e) {
                 ProgressUI.setErrorText("IOError while generating reports: " + e.getMessage());
             }
