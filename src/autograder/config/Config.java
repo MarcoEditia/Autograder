@@ -15,6 +15,7 @@ public final class Config {
 
     private final Path generatedReportPath;
     private final String scoresReportFilename;
+    private final Path scoresheetTemplatePath;
     private final String anomalyReportFilename;
 
     private final double similarityThreshold;
@@ -32,6 +33,7 @@ public final class Config {
 
         this.generatedReportPath = getPath(configProperties, "GENERATED_REPORT_PATH");
         this.scoresReportFilename = getString(configProperties, "SCORES_REPORT_FILENAME");
+        this.scoresheetTemplatePath = getPath(configProperties, "SCORESHEET_TEMPLATE_PATH");
         this.anomalyReportFilename = getString(configProperties, "ANOMALY_REPORT_FILENAME");
 
         this.similarityThreshold = getDouble(configProperties, "SIMILARITY_THRESHOLD");
@@ -121,6 +123,10 @@ public final class Config {
 
     public String getScoresReportFilename() {
         return scoresReportFilename;
+    }
+
+    public Path getScoresheetTemplatePath() {
+        return scoresheetTemplatePath;
     }
 
     public String getAnomalyReportFilename() {

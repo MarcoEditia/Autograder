@@ -53,7 +53,7 @@ public class ProcessRunner {
                 process.destroyForcibly();
                 process.waitFor(2, TimeUnit.SECONDS);
                 readerThread.join(1000);
-                return new ProcessResult(-1, "Process timed out after " + timeoutSeconds + " seconds.", true);
+                return new ProcessResult(-1, outputLog.toString().trim(), true);
             }
             readerThread.join(1000);
             //tells main thread to pause for readerThread to finish job of collecting logs within 1 second

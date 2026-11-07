@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import model.*;
+import reporting.BaseReportBuilder;
 import reporting.HtmlReportBuilder;
 import scoring.Evaluator;
 
@@ -178,17 +179,25 @@ public class GradingPipeline {
                     )), config.getTimeout(), questionDir);
 
                     if (runResult.isTimedOut()){
+                        long passedTests = runResult.getOutput()
+                                .lines()
+                                .filter(line -> line.trim().equals("Passed"))
+                                .count();
+                        double partialScore = passedTests;
+                        
                         Anomaly anomaly = new Anomaly(submission.getStudentId(), 
                                 Anomaly.Type.EXECUTION_TIMEOUT, 
                                 questionName + " exceeded " + config.getTimeout() + " seconds. "
-                                + "The tester was stopped. Partial marks were not calculated automatically. Score awarded was 0.0; needs manual review"
+                                + "Retained " + partialScore + " marks from completed tests. Remaining tests in this tester were not run; manual review required."
                                 + System.lineSeparator() + runResult.getOutput());
                         anomalyList.add(anomaly);
                         grade.addAnomaly(anomaly);
-                        grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+
+                        grade.addQuestionScore(new QuestionScore(questionName, partialScore));
                         System.out.printf(
-                                "  [TIMEOUT] %s stopped — provisional 0; manual review required%n",
-                                questionName
+                                "  [TIMEOUT] %s stopped — %.1f marks retained; manual review required%n",
+                                questionName,
+                                partialScore
                         );
                         continue;
                     }
@@ -275,26 +284,29 @@ public class GradingPipeline {
             // Generate report files
             ProgressUI.onGenerateReport();
             try {
-                CsvWriter csvWriter = new CsvWriter();
+                CsvWriter csvWriter = new CsvWriter(config.getScoresheetTemplatePath());
                 csvWriter.export(
                     new ReportData(grades, anomalyList, flags), 
                     config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename()
                 );
-                HtmlReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder(config);
+                BaseReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder(config);
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
-                Path skippedFile = config.getGeneratedReportPath().resolve("skipped-submissions.txt");
-                Files.write(skippedFile, skippedSubmissions);
                 ProgressUI.onGenerateReportSuccess(config.getGeneratedReportPath().toString(), 
                 config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename(),
                 config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename());
                 if (skippedSubmissions.isEmpty()) {
                     ProgressUI.onProgramCompleted();
                 } else {
-                    ProgressUI.setErrorText("Reports generated for " + grades.size()
+                    Path skippedFile = config.getGeneratedReportPath().resolve("skipped-submissions.txt");
+                    Files.write(skippedFile, skippedSubmissions);
+                    ProgressUI.setErrorText(
+                            "Reports generated for " + grades.size()
                             + " submissions. Skipped " + skippedSubmissions.size()
-                            + "; see reports/skipped-submissions.txt. These students are absent from the scoresheet.");
+                            + "; see " + skippedFile
+                            + ". These students have blank scores in the exported template."
+                    );
                 }
             } catch (IOException e) {
                 ProgressUI.setErrorText("IOError while generating reports: " + e.getMessage());

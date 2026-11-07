@@ -269,7 +269,24 @@ public class HtmlReportBuilder extends BaseReportBuilder {
                                                             .span().attrClass("mini").text(studentEntry.getKey()).__()
                                                         .__()
                                                         .td().ul().attrClass("group-details").of(list -> {
-                                                            for (Anomaly a : own) list.li().text(a.getDetails()).__();
+                                                            for (Anomaly a : own) {
+                                                                // Separates the explanation and output with a newline.
+                                                                String[] parts = a.getDetails().split("\\R", 2);
+
+                                                                list.li().of(item -> {
+                                                                    item.text(parts[0]);
+
+                                                                    if (parts.length > 1 && !parts[1].isBlank()) {
+                                                                        item.raw("<details class=\"output-details\"><summary>")
+                                                                            .text("View full output")
+                                                                            .raw("</summary>")
+                                                                            .pre().attrClass("diagnostic")
+                                                                                .text(parts[1])
+                                                                            .__()
+                                                                            .raw("</details>");
+                                                                    }
+                                                                }).__();
+                                                            }
                                                         }).__().__()
                                                         .td().span().attrClass(resolved ? "badge badge-success" : "badge badge-warning")
                                                             .text(resolved ? "Auto-corrected" : "Needs review").__()
@@ -298,7 +315,9 @@ public class HtmlReportBuilder extends BaseReportBuilder {
     }
 
     @Override
-    protected String buildContent(ReportData data) { return VIEW.render(data); }
+    protected String buildContent(ReportData data) {
+         return VIEW.render(data); 
+    }
 
     private static List<FinalGrade> grades(ReportData data) {
         return data.getGrades() == null ? Collections.emptyList() : data.getGrades();
@@ -562,6 +581,24 @@ public class HtmlReportBuilder extends BaseReportBuilder {
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.03em;
+    }
+
+    .output-details {
+    margin-top: 8px;
+    }
+
+    .output-details summary {
+        cursor: pointer;
+        color: #234979;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .diagnostic {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        max-height: 300px;
+        overflow-y: auto;
     }
 
     .badge-danger { background-color: var(--danger-bg); color: var(--danger-text); }
