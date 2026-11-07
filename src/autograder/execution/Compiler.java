@@ -36,14 +36,14 @@ public class Compiler {
         return compile(sourceDir, outputDir);
     }
     
-    public CompilationResult compile(Submission submission, String questionFolder) {
+    public CompilationResult compile(Submission submission, String questionFolder, String questionName) {
         if (submission == null || submission.getFolderPath() == null) {
             return new CompilationResult(false, "Invalid submission or null folder path.");
         }
         File sourceDir = new File(submission.getFolderPath(), questionFolder);
-        File outputDir = new File(sourceDir, "classes");
+        File outputDir = new File(sourceDir, "classes/" + questionName);
 
-        return compile(sourceDir, outputDir);
+        return compile(sourceDir, outputDir, questionName);
     }
 
     public CompilationResult compile(File sourceDir, File outputDir) {

@@ -17,6 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import model.*;
@@ -48,6 +50,12 @@ public class GradingPipeline {
             File[] testerFiles = testerFilesFolder.listFiles();
             
             if (testerFiles == null) throw new IOException("Cannot read the tester folder");
+            // Sort 
+            Arrays.sort(
+                    testerFiles,
+                    Comparator.comparing(File::getName)
+            );
+
             boolean hasTester = false;
             for (File file : testerFiles){
                 if (file.isFile() && file.getName().endsWith("Tester.java")){
@@ -77,10 +85,44 @@ public class GradingPipeline {
                 ProgressUI.onStudentIdKnown(ingestionResult.getStudentId());
 
                 anomalyList.addAll(ingestionResult.getAnomalies());
+                
+                // 
+                System.out.println();
+                System.out.println("Student: " + ingestionResult.getStudentId());
+                System.out.println();
 
-                System.out.println("Ingested submission for: " + ingestionResult.getStudentId());
+                int correctedHeaders = 0;
+                int unresolvedHeaders = 0;
+
                 for (Anomaly anomaly : ingestionResult.getAnomalies()) {
-                    System.out.println(anomaly.toString());
+                    if (anomaly.getType() == Anomaly.Type.MISSING_HEADER) {
+                        if (anomaly.isResolved()) {
+                            correctedHeaders++;
+                        } else {
+                            unresolvedHeaders++;
+                        }
+                        continue;
+                    }
+
+                    System.out.printf(
+                            "  [%-7s] %s%n",
+                            anomaly.isResolved() ? "FIXED" : "REVIEW",
+                            anomaly.getType().getLabel()
+                    );
+                }
+
+                if (correctedHeaders > 0) {
+                    System.out.printf(
+                            "  [FIXED]   Headers corrected in %d file(s)%n",
+                            correctedHeaders
+                    );
+                }
+
+                if (unresolvedHeaders > 0) {
+                    System.out.printf(
+                            "  [REVIEW]  Headers need checking in %d file(s)%n",
+                            unresolvedHeaders
+                    );
                 }
                 
                 Submission submission = new Submission(ingestionResult.getStudentId(), ingestionResult.getStudentName(), ingestionResult.getCleanSubmissionDirectory().toString());
@@ -88,8 +130,8 @@ public class GradingPipeline {
                 grade.addAnomalies(ingestionResult.getAnomalies());
 
                 // ============ Execution ============
-                for (File testerFile : testerFilesFolder.listFiles()) {
-                    if (!testerFile.isFile() || !testerFile.getName().endsWith(".java")) continue;
+                for (File testerFile : testerFiles) {
+                    if (!testerFile.isFile() || !testerFile.getName().endsWith("Tester.java")) continue;
 
                     File questionDir = new File(submission.getFolderPath(), testerFile.getName().substring(0, 2));
                     // The name part of the tester files and the submission files (e.g. Q1a, QlaTester)
@@ -98,6 +140,10 @@ public class GradingPipeline {
 
                     if (!new File(questionDir, questionName + ".java").isFile()){
                         grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+                        System.out.printf(
+                                "  [MISSING] %s source missing — 0 marks%n",
+                                questionName
+                        );
                         continue;
                     }
 
@@ -110,7 +156,7 @@ public class GradingPipeline {
 
                     // Compile results
                     ProgressUI.onComplieFile(testerFileName);
-                    CompilationResult result = this.compiler.compile(submission, questionDir.getName());
+                    CompilationResult result = this.compiler.compile(submission, questionDir.getName(), questionName);
                     if (!result.isSuccess()) {
                         Anomaly anomaly = new Anomaly(submission.getStudentId(), 
                                 Anomaly.Type.COMPILATION_FAILURE, 
@@ -119,28 +165,31 @@ public class GradingPipeline {
                         anomalyList.add(anomaly);
                         grade.addAnomaly(anomaly);
                         grade.addQuestionScore(new QuestionScore(questionName, 0.0));
-                        System.out.println("Compilation failed: " + questionName + " — " + submission.getStudentId());
+                        System.out.printf("  [COMPILE] %s failed — 0 marks%n", questionName);
                         continue;
                     } else {
-                        System.out.println("[SUCCESS] Compiled " + questionDir.getName() + " for " + submission.getStudentId());
                         ProgressUI.onComplieFileSuccess();
                     }
                     
                     ProcessResult runResult = ProcessRunner.run(new ArrayList<>(List.of(
                         "java", "-cp", 
-                        new File(questionDir, "classes").getAbsolutePath() + File.pathSeparator + questionDir.getAbsolutePath(), 
+                        new File(questionDir, "classes/" + questionName).getAbsolutePath() + File.pathSeparator + questionDir.getAbsolutePath(), 
                         testerFileName
                     )), config.getTimeout(), questionDir);
 
                     if (runResult.isTimedOut()){
                         Anomaly anomaly = new Anomaly(submission.getStudentId(), 
                                 Anomaly.Type.EXECUTION_TIMEOUT, 
-                                questionName + " exceeded " + config.getTimeout() + " seconds."
+                                questionName + " exceeded " + config.getTimeout() + " seconds. "
                                 + "The tester was stopped. Partial marks were not calculated automatically. Score awarded was 0.0; needs manual review"
                                 + System.lineSeparator() + runResult.getOutput());
                         anomalyList.add(anomaly);
                         grade.addAnomaly(anomaly);
                         grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+                        System.out.printf(
+                                "  [TIMEOUT] %s stopped — provisional 0; manual review required%n",
+                                questionName
+                        );
                         continue;
                     }
 
@@ -152,12 +201,21 @@ public class GradingPipeline {
                         anomalyList.add(anomaly);
                         grade.addAnomaly(anomaly);
                         grade.addQuestionScore(new QuestionScore(questionName, 0.0));
+                        System.out.printf(
+                                "  [ERROR]   %s execution failed — provisional 0; review required%n",
+                                questionName
+                        );
                         continue;
                     }
 
                     ProgressUI.onEvaluate(questionName);
                     QuestionScore questionScore = Evaluator.evaluate(questionName, runResult.getOutput());
                     grade.addQuestionScore(questionScore);
+                    System.out.printf(
+                            "  [RESULT]  %-4s %.1f marks%n",
+                            questionName,
+                            questionScore.getScore()
+                    );
                     ProgressUI.onEvaluateSuccess();
                 }
 
@@ -172,6 +230,23 @@ public class GradingPipeline {
 
                 codeById.put(submission.getStudentId(), sourceCode);
                 grades.add(grade);
+
+                boolean needsMarkReview = grade.getAnomalies().stream()
+                        .anyMatch(a ->
+                                a.getType() == Anomaly.Type.EXECUTION_TIMEOUT
+                                || a.getType() == Anomaly.Type.RUNTIME_ERROR
+                        );
+
+                System.out.printf(
+                        "%n  Total: %.1f / %.1f%s%n",
+                        grade.getTotalScore(),
+                        (double) config.getMaxScore(),
+                        needsMarkReview ? " — provisional; manual review required" : ""
+                );
+
+                System.out.println(
+                        "  Full details are available in the HTML report."
+                );
                 } catch (IOException | SecurityException e){
                     // A failed archive/submission does not abort the remaining batch.
                     // It is skipped, rather than exported as an earned zero.
