@@ -17,6 +17,7 @@ public final class Config {
     private final String scoresReportFilename;
     private final String anomalyReportFilename;
 
+    private final double similarityThreshold;
     private final double maxScore;
     private final double passMark;
 
@@ -33,8 +34,10 @@ public final class Config {
         this.scoresReportFilename = getString(configProperties, "SCORES_REPORT_FILENAME");
         this.anomalyReportFilename = getString(configProperties, "ANOMALY_REPORT_FILENAME");
 
-        this.maxScore = getInt(configProperties, "MAX_SCORE");
-        this.passMark = getInt(configProperties, "PASS_MARK");
+        this.similarityThreshold = getDouble(configProperties, "SIMILARITY_THRESHOLD");
+        this.maxScore = getDouble(configProperties, "MAX_SCORE");
+        this.passMark = getDouble(configProperties, "PASS_MARK");
+
 
         this.timeout = getLong(configProperties, "TIMEOUT");
     }
@@ -87,7 +90,7 @@ public final class Config {
         }
     }
 
-    private double getInt(Properties props, String key) {
+    private double getDouble(Properties props, String key) {
         String rawTimeout = props.getProperty(key);
 
         if (rawTimeout == null || rawTimeout.trim().isEmpty()) {
@@ -126,6 +129,10 @@ public final class Config {
 
     public long getTimeout() {
         return timeout;
+    }
+
+    public double getSimilarityThreshold() {
+        return similarityThreshold;
     }
 
     public double getMaxScore(){

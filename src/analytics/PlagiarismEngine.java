@@ -7,7 +7,7 @@ import java.util.*;
 public class PlagiarismEngine {
 
     // Input: studentId -> source code. Output: A list of all flagged pairs.
-    public static List<PlagiarismResult> checkAll(Map<String, String> codeById) {
+    public static List<PlagiarismResult> checkAll(Map<String, String> codeById, double threshold) {
         List<String> ids = new ArrayList<>(codeById.keySet());
         
         // Tokenize each submission
@@ -27,7 +27,7 @@ public class PlagiarismEngine {
                 double score = calculateSim(tokens.get(a), tokens.get(b));
 
                 // Flag ANY pair that crosses the threshold
-                if (score > 0.75) {
+                if (score > threshold) {
                     allFlaggedPairs.add(new PlagiarismResult(a, b, score));
                 }
                 ProgressUI.addBarValue();

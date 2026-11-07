@@ -119,7 +119,7 @@ public class GradingPipeline {
                         anomalyList.add(anomaly);
                         grade.addAnomaly(anomaly);
                         grade.addQuestionScore(new QuestionScore(questionName, 0.0));
-                        System.out.println("Compilation failed: " + result.getOutput());
+                        System.out.println("Compilation failed: " + questionName + " — " + submission.getStudentId());
                         continue;
                     } else {
                         System.out.println("[SUCCESS] Compiled " + questionDir.getName() + " for " + submission.getStudentId());
@@ -183,7 +183,7 @@ public class GradingPipeline {
             
             // numOfComparison pairs = n(n-1)/2
             ProgressUI.onPlagiarismCheck(grades.size() * (grades.size() - 1) / 2); 
-            List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById);
+            List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById, config.getSimilarityThreshold());
             ProgressUI.onPlagiarismSuccess();
 
             // Adding plagiarism flags to each grade
