@@ -2,6 +2,7 @@ package autograder.execution;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -9,13 +10,18 @@ import model.ProcessResult;
 
 public class ProcessRunner {
 
-    public static ProcessResult run(List<String> command, long timeoutSeconds) {
+    public static ProcessResult run(List<String> command, long timeoutSeconds){
+        return run(command, timeoutSeconds, null);
+    }
+
+    public static ProcessResult run(List<String> command, long timeoutSeconds, File workingDirectory) {
         StringBuilder outputLog = new StringBuilder();
         //StringBuilder just help stores output logs better than an array, 
         // handles line separators like \n too when u output it to string
 
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
+            if (workingDirectory != null) pb.directory(workingDirectory);
             //ProcessBuilder will run the command
             //multiple files will be run. For example, javac -d /path/to/classes /path/to/Q1a.java /path/to/Q1aTester.java
             
@@ -45,6 +51,8 @@ public class ProcessRunner {
 
             if (!finished) {
                 process.destroyForcibly();
+                process.waitFor(2, TimeUnit.SECONDS);
+                readerThread.join(1000);
                 return new ProcessResult(-1, "Process timed out after " + timeoutSeconds + " seconds.", true);
             }
             readerThread.join(1000);

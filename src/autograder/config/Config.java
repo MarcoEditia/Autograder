@@ -17,8 +17,8 @@ public final class Config {
     private final String scoresReportFilename;
     private final String anomalyReportFilename;
 
-    private final int maxScore;
-    private final int passMark;
+    private final double maxScore;
+    private final double passMark;
 
     private final long timeout;
 
@@ -87,14 +87,14 @@ public final class Config {
         }
     }
 
-    private int getInt(Properties props, String key) {
+    private double getInt(Properties props, String key) {
         String rawTimeout = props.getProperty(key);
 
         if (rawTimeout == null || rawTimeout.trim().isEmpty()) {
             throw new IllegalArgumentException(key + " configuration key is missing or empty!");
         }
         try {
-            return Integer.parseInt(rawTimeout);
+            return Double.parseDouble(rawTimeout);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(key + " configuration key is not a valid int type!");
         }
@@ -126,6 +126,14 @@ public final class Config {
 
     public long getTimeout() {
         return timeout;
+    }
+
+    public double getMaxScore(){
+        return maxScore;
+    }
+
+     public double getPassMark(){
+        return passMark;
     }
 
     public static String getConfigFile() {

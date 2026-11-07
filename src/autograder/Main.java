@@ -18,7 +18,7 @@ public class Main {
 
             GradingPipeline pipeline = new GradingPipeline(config);
             pipeline.run();
-            ProgressUI.onProgramCompleted();
+            // ProgressUI.onProgramCompleted(); pipeline announces completition only after reports are generated.
         } catch (Exception e) {
             ProgressUI.setErrorText("An error occurred: " + e.getMessage());
         }

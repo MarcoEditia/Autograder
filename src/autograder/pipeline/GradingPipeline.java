@@ -130,7 +130,7 @@ public class GradingPipeline {
                         "java", "-cp", 
                         new File(questionDir, "classes").getAbsolutePath() + File.pathSeparator + questionDir.getAbsolutePath(), 
                         testerFileName
-                    )), config.getTimeout());
+                    )), config.getTimeout(), questionDir);
 
                     if (runResult.isTimedOut()){
                         Anomaly anomaly = new Anomaly(submission.getStudentId(), 
@@ -205,7 +205,7 @@ public class GradingPipeline {
                     new ReportData(grades, anomalyList, flags), 
                     config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename()
                 );
-                HtmlReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder();
+                HtmlReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder(config);
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
