@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import model.*;
 import reporting.BaseReportBuilder;
 import reporting.HtmlReportBuilder;
@@ -267,7 +268,8 @@ public class GradingPipeline {
             
             // numOfComparison pairs = n(n-1)/2
             ProgressUI.onPlagiarismCheck(grades.size() * (grades.size() - 1) / 2); 
-            List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById, config.getSimilarityThreshold());
+            Set<String> starterLines = PlagiarismEngine.loadStarterLines(Path.of("RenameToYourUsername/"));
+            List<PlagiarismResult> flags = PlagiarismEngine.checkAll(codeById, config.getSimilarityThreshold(), starterLines);
             ProgressUI.onPlagiarismSuccess();
 
             // Adding plagiarism flags to each grade
