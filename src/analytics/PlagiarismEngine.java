@@ -11,12 +11,13 @@ import java.util.*;
 public class PlagiarismEngine {
     // Students with less lines than this are skipped to avoid false flags
     private static final int MIN_OWN_LINES = 5;
+    private static final Path STARTER_DIR = Path.of("RenameToYourUsername/");
 
     // Loads starting code for questions
-    public static Set<String> loadStarterLines(Path starterDir) {
+    private static Set<String> loadStarterLines() {
         Set<String> starterLines = new HashSet<>();
         try {
-            for (Path file : FileUtils.listFilePaths(starterDir)) {
+            for (Path file : FileUtils.listFilePaths(STARTER_DIR)) {
                 if (file.toString().endsWith(".java")) {
                     starterLines.addAll(tokenize(Files.readString(file)));
                 }
@@ -30,8 +31,9 @@ public class PlagiarismEngine {
     }
 
     // Input: studentId -> source code, and the starter lines to ignore. Output: A list of all flagged pairs.
-    public static List<PlagiarismResult> checkAll(Map<String, String> codeById, double threshold, Set<String> starterLines) {
+    public static List<PlagiarismResult> checkAll(Map<String, String> codeById, double threshold) {
         List<String> ids = new ArrayList<>(codeById.keySet());
+        Set<String> starterLines = loadStarterLines();
         
         // Tokenize each submission, then remove the lines that also appear in the starter code
         Map<String, Set<String>> tokens = new HashMap<>();
