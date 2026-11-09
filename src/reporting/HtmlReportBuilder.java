@@ -24,11 +24,9 @@ import model.QuestionScore;
 import model.ReportData;
 
 public class HtmlReportBuilder extends BaseReportBuilder {
-    private final Config config;
     private final HtmlView<ReportData> VIEW;
 
     public HtmlReportBuilder(Config config) {
-        this.config = config;
         this.VIEW = HtmlFlow.view(page -> page
             .html().attrLang("en")
                 .head()
