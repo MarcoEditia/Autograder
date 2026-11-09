@@ -26,7 +26,7 @@ import model.ReportData;
 public class HtmlReportBuilder extends BaseReportBuilder {
     private final HtmlView<ReportData> VIEW;
 
-    public HtmlReportBuilder(Config config) {
+    public HtmlReportBuilder(Config config, List<String> skippedSubmissions) {
         this.VIEW = HtmlFlow.view(page -> page
             .html().attrLang("en")
                 .head()
@@ -75,6 +75,30 @@ public class HtmlReportBuilder extends BaseReportBuilder {
                                     }).__();
                                 }
                             }).__();
+
+                            if (!skippedSubmissions.isEmpty()) {
+                                container.section().attrClass("category-banner")
+                                    .div().attrClass("banner-header")
+                                        .span().text("Skipped submissions").__()
+                                        .span().attrClass("count-pill")
+                                            .text(skippedSubmissions.size() + " skipped")
+                                        .__()
+                                    .__()
+                                    .div().attrClass("banner-body")
+                                        .p().text(
+                                            "These submissions were not graded and are excluded "
+                                            + "from the score statistics."
+                                        ).__()
+                                        .ul()
+                                            .of(list -> {
+                                                for (String skipped : skippedSubmissions) {
+                                                    list.li().text(skipped).__();
+                                                }
+                                            })
+                                        .__()
+                                    .__()
+                                .__();
+                            }
 
                             container.h2().attrId("gradebook").text("Student Gradebook").__();
                             container.p().attrClass("note")

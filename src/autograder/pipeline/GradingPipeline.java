@@ -260,6 +260,7 @@ public class GradingPipeline {
                     // A failed archive/submission does not abort the remaining batch.
                     // It is skipped, rather than exported as an earned zero.
                     skippedSubmissions.add(zip.getFileName() + ": " + e.getMessage());
+                    System.out.println();
                     System.out.println("Skipped submission: " + zip.getFileName() + ": " + e.getMessage()); 
                 }
                 ProgressUI.onStudentDone();
@@ -289,7 +290,7 @@ public class GradingPipeline {
                     new ReportData(grades, anomalyList, flags), 
                     config.getGeneratedReportPath().toString() + "/" + config.getScoresReportFilename()
                 );
-                BaseReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder(config);
+                BaseReportBuilder htmlAnomalyBuilder = new HtmlReportBuilder(config, skippedSubmissions);
                 htmlAnomalyBuilder.generateReport(
                     grades, config.getGeneratedReportPath().toString() + "/" + config.getAnomalyReportFilename()
                 );
