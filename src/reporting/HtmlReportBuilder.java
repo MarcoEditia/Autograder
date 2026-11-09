@@ -425,7 +425,7 @@ public class HtmlReportBuilder extends BaseReportBuilder {
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 98%;
       margin: 0 auto;
     }
 
