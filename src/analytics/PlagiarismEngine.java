@@ -2,18 +2,45 @@ package analytics;
 
 import model.PlagiarismResult;
 import autograder.ui.ProgressUI;
+import autograder.util.FileUtils;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class PlagiarismEngine {
+    // Students with less lines than this are skipped to avoid false flags
+    private static final int MIN_OWN_LINES = 5;
+    private static final Path STARTER_DIR = Path.of("RenameToYourUsername/");
 
-    // Input: studentId -> source code. Output: A list of all flagged pairs.
+    // Loads starting code for questions
+    private static Set<String> loadStarterLines() {
+        Set<String> starterLines = new HashSet<>();
+        try {
+            for (Path file : FileUtils.listFilePaths(STARTER_DIR)) {
+                if (file.toString().endsWith(".java")) {
+                    starterLines.addAll(tokenize(Files.readString(file)));
+                }
+            }
+        } catch (IOException e) {
+            // e.g. folder missing: carry on without it, but say so
+            System.out.println("[PlagiarismEngine] Could not read starter files (" + e.getMessage()
+                    + "); starter code will NOT be ignored.");
+        }
+        return starterLines;
+    }
+
+    // Input: studentId -> source code, and the starter lines to ignore. Output: A list of all flagged pairs.
     public static List<PlagiarismResult> checkAll(Map<String, String> codeById, double threshold) {
         List<String> ids = new ArrayList<>(codeById.keySet());
+        Set<String> starterLines = loadStarterLines();
         
-        // Tokenize each submission
+        // Tokenize each submission, then remove the lines that also appear in the starter code
         Map<String, Set<String>> tokens = new HashMap<>();
         for (String id : ids) {
-            tokens.put(id, tokenize(codeById.get(id)));
+            Set<String> ownLines = tokenize(codeById.get(id));
+            ownLines.removeAll(starterLines);
+            tokens.put(id, ownLines);
         }
 
         // Return a list of all plagiarised pairs
@@ -24,11 +51,14 @@ public class PlagiarismEngine {
                 String a = ids.get(i);
                 String b = ids.get(j);
                 
-                double score = calculateSim(tokens.get(a), tokens.get(b));
+                // Only compare when both students wrote enough of their own code
+                if (tokens.get(a).size() >= MIN_OWN_LINES && tokens.get(b).size() >= MIN_OWN_LINES) {
+                    double score = calculateSim(tokens.get(a), tokens.get(b));
 
-                // Flag ANY pair that crosses the threshold
-                if (score > threshold) {
-                    allFlaggedPairs.add(new PlagiarismResult(a, b, score));
+                    // Flag ANY pair that crosses the threshold
+                    if (score > threshold) {
+                        allFlaggedPairs.add(new PlagiarismResult(a, b, score));
+                    }
                 }
                 ProgressUI.addBarValue();
             }
