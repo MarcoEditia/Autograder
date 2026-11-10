@@ -80,7 +80,7 @@ public final class SubmissionCleaner {
 
     private static List<Anomaly> validateRequiredFiles(Path studentDirectory, String studentId) {
         List<Anomaly> anomalies = new ArrayList<>();
-
+        
         for (String questionDirName : EXPECTED_QUESTION_DIRECTORIES) {
             Path questionDirPath = studentDirectory.resolve(questionDirName);
             if (!Files.isDirectory(questionDirPath)) {
@@ -128,14 +128,14 @@ public final class SubmissionCleaner {
                 // Detect anomaly before modifying
                 if (!hasValidHeader) {
                     try {
-                        // 1. Attempt the file repair first
+                        //  Attempt the file repair first
                         String updatedContent = hasHeaderBlock 
                                 ? standardHeader + "\n" + content.substring(matcher.end()).stripLeading() 
                                 : standardHeader + "\n\n" + content;
 
                         Files.writeString(javaFile, updatedContent);
 
-                        // 2. Add anomaly WITH resolution ONLY after write succeeds
+                        //  Add anomaly WITH resolution ONLY after write succeeds
                         anomalies.add(new Anomaly(
                             studentId, 
                             Anomaly.Type.MISSING_HEADER, 
@@ -143,7 +143,7 @@ public final class SubmissionCleaner {
                             "Auto-Repaired: Injected standard header block"
                         ));
                     } catch (IOException e) {
-                        // 3. If repair fails, log as UNRESOLVED (3-argument constructor) so it tags "Requires Review"
+                        //  If repair fails, log as UNRESOLVED so it tags "Requires Manual Review"
                         anomalies.add(new Anomaly(
                             studentId, 
                             Anomaly.Type.MISSING_HEADER, 
