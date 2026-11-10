@@ -8,14 +8,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import config.Config;
 
 public class PlagiarismEngine {
     // Students with less lines than this are skipped to avoid false flags
     private static final int MIN_OWN_LINES = 5;
-    private static final Path STARTER_DIR = Path.of("RenameToYourUsername/");
 
     // Loads starting code for questions
     private static Set<String> loadStarterLines() {
+        Path STARTER_DIR = new Config().getStarterFilesPath();
         Set<String> starterLines = new HashSet<>();
         try {
             for (Path file : FileUtils.listFilePaths(STARTER_DIR)) {
