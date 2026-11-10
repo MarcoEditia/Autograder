@@ -47,7 +47,7 @@
 
 - Libraries (.jar in `lib/`) to build the HTML instructor report
 
-# Workflow: Unzip -> Validate structure -> Inject testers -> Compile and Run -> Score Calculation -> Plagiarism check -> Fill Scoresheet and Report
+# Workflow: Unzip -> Validate structure -> Inject testers -> Compile and Run -> Score Calculation -> Plagiarism check -> Fill Scoresheet and Report | one submission at a time |
 
 ``` txt
 └── Autograder/
