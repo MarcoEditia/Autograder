@@ -1,8 +1,9 @@
 package analytics;
 
 import model.PlagiarismResult;
-import autograder.ui.ProgressUI;
-import autograder.util.FileUtils;
+import ui.ProgressUI;
+import util.FileUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

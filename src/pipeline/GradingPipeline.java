@@ -1,13 +1,11 @@
-package autograder.pipeline;
+package pipeline;
 
 import analytics.PlagiarismEngine;
-import autograder.config.Config;
-import autograder.execution.CompilationResult;
-import autograder.execution.Compiler;
-import autograder.execution.ProcessRunner;
-import autograder.execution.TestInjector;
-import autograder.ui.ProgressUI;
-import autograder.util.FileUtils;
+import config.Config;
+import execution.CompilationResult;
+import execution.Compiler;
+import execution.ProcessRunner;
+import execution.TestInjector;
 import ingestion.IngestionResult;
 import ingestion.SubmissionCleaner;
 import io.CsvWriter;
@@ -25,6 +23,8 @@ import model.*;
 import reporting.BaseReportBuilder;
 import reporting.HtmlReportBuilder;
 import scoring.Evaluator;
+import ui.ProgressUI;
+import util.FileUtils;
 
 public class GradingPipeline {
     private final Config config;
