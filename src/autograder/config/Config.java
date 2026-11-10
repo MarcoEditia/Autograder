@@ -12,7 +12,6 @@ public final class Config {
     private final Path testerFilesPath;
     private final Path studentSubmissionPath;
     private final Path cleanStudentSubmissionPath;
-    private final Path starterFilesPath;
 
     private final Path generatedReportPath;
     private final String scoresReportFilename;
