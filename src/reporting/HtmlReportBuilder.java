@@ -8,6 +8,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -75,6 +77,60 @@ public class HtmlReportBuilder extends BaseReportBuilder {
                                     }).__();
                                 }
                             }).__();
+
+                            Map<Anomaly.Type, Set<String>> studentsByIssue =
+                                    new EnumMap<>(Anomaly.Type.class);
+
+                            for (FinalGrade grade : data.getGrades()) {
+                                for (Anomaly anomaly : grade.getAnomalies()) {
+                                    studentsByIssue
+                                            .computeIfAbsent(
+                                                    anomaly.getType(),
+                                                    type -> new HashSet<>()
+                                            )
+                                            .add(grade.getStudentId());
+                                }
+                            }
+
+                            // Show the most widespread issues first.
+                            List<Anomaly.Type> issueTypes =
+                                    new ArrayList<>(studentsByIssue.keySet());
+
+                            issueTypes.sort((a, b) -> Integer.compare(
+                                    studentsByIssue.get(b).size(),
+                                    studentsByIssue.get(a).size()
+                            ));
+
+                            if (!issueTypes.isEmpty()) {
+                                container.div().attrClass("common-issues")
+                                    .div().attrClass("common-issues-heading")
+                                        .strong().text("Common issues").__()
+                                        .span().text("Students affected · includes corrected issues").__()
+                                    .__()
+                                    .div().attrClass("common-issues-list")
+                                        .of(list -> {
+                                            for (Anomaly.Type type : issueTypes) {
+                                                if (type == Anomaly.Type.COMPILATION_FAILURE) continue;
+                                                boolean needsReview = anomalies.stream()
+                                                        .anyMatch(a -> a.getType() == type
+                                                                && !a.isResolved());
+
+                                                String target = type.name().toLowerCase(Locale.ROOT)
+                                                                + (needsReview ? "-review" : "-corrected");
+
+                                                list.a()
+                                                    .attrClass("common-issue")
+                                                    .attrHref("#" + target)
+                                                    .span().text(issueLabel(type)).__()
+                                                    .strong().text(
+                                                        String.valueOf(studentsByIssue.get(type).size())
+                                                    ).__()
+                                                .__();
+                                            }
+                                        })
+                                    .__()
+                                .__();
+                            }
 
                             if (!skippedSubmissions.isEmpty()) {
                                 container.section().attrClass("category-banner")
@@ -416,6 +472,20 @@ public class HtmlReportBuilder extends BaseReportBuilder {
         if (type == Anomaly.Type.UNMODIFIED_TEMPLATE) return "Compare the source with the provided starter files.";
         return "Check the recorded details against the original submission.";
     }
+    private static String issueLabel(Anomaly.Type type) {
+        return switch (type) {
+            case MISSING_HEADER -> "Missing / malformed header";
+            case UNRENAMED_FOLDER -> "Default folder name";
+            case INCORRECT_FOLDER -> "Incorrect root folder";
+            case FLATTENED_HIERARCHY -> "Missing username folder";
+            case MISSING_QUESTION_FOLDER -> "Missing question folder";
+            case MISSING_SOURCE_FILE -> "Missing Java file";
+            case UNMODIFIED_TEMPLATE -> "Unmodified template";
+            case COMPILATION_FAILURE -> "Compilation failed";
+            case EXECUTION_TIMEOUT -> "Execution timeout";
+            case RUNTIME_ERROR -> "Runtime error";
+        };
+    }
     private static String number(double value) { return String.format(Locale.ENGLISH, "%.1f", value); }
     private static String marks(double value, double max) { return number(value) + " / " + number(max); }
     private static String percent(PlagiarismResult pair) { return String.format(Locale.ENGLISH, "%.2f%%", pair.getSimilarityScore() * 100); }
@@ -634,6 +704,63 @@ public class HtmlReportBuilder extends BaseReportBuilder {
       background: #f1f5f9;
       padding: 2px 6px;
       border-radius: 4px;
+    }
+
+    /* Compact common-issues summary */
+    .common-issues {
+        margin: -12px 0 24px;
+        padding: 14px 16px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+
+    .common-issues-heading {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .common-issues-heading > span {
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .common-issues-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .common-issue {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        color: #234979;
+        font-size: 13px;
+        text-decoration: none;
+    }
+
+    .common-issue strong {
+        color: var(--text-main);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .common-issue:hover {
+        background: #eff6ff;
+        border-color: #93b4e4;
+    }
+
+    .common-issue:hover span {
+        text-decoration: underline;
+        text-underline-offset: 3px;
     }
 
     .text-bold { font-weight: 700; }
