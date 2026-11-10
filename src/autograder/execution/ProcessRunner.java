@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import model.ProcessResult;
 
 public class ProcessRunner {
-    //basically run the process to run the command then run a background thread to collect output logs
 
     public static ProcessResult run(List<String> command, long timeoutSeconds){
         return run(command, timeoutSeconds, null);
@@ -52,10 +51,7 @@ public class ProcessRunner {
 
             if (!finished) {
                 process.destroyForcibly();
-                // wait 2 seconds for OS to finish clearning up killed process
                 process.waitFor(2, TimeUnit.SECONDS);
-                // pause main thread up to 1 second so background reader thread 
-                // can finish reading whatever last output lines the process manage to print before it died
                 readerThread.join(1000);
                 return new ProcessResult(-1, outputLog.toString().trim(), true);
             }
