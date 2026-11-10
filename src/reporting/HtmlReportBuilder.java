@@ -1,6 +1,5 @@
 package reporting;
 
-import autograder.config.Config;
 import htmlflow.HtmlFlow;
 import htmlflow.HtmlView;
 import java.time.ZoneId;
@@ -19,6 +18,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import config.Config;
 import model.Anomaly;
 import model.FinalGrade;
 import model.PlagiarismResult;

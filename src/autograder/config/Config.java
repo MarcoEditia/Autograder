@@ -101,7 +101,7 @@ public final class Config {
         try {
             return Double.parseDouble(rawTimeout);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(key + " configuration key is not a valid int type!");
+            throw new IllegalArgumentException(key + " configuration key is not a valid double type!");
         }
     }
 

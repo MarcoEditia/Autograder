@@ -1,4 +1,4 @@
-package autograder.execution;
+package execution;
 
 public class CompilationResult {
     private final boolean success;

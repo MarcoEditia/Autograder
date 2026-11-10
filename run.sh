@@ -1,1 +1,1 @@
-java -cp "classes:lib/*" autograder.Main
+java -cp "classes:lib/*" Main

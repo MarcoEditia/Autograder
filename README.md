@@ -86,7 +86,7 @@ The cleaner can correct supported folder and header mistakes. A missing source f
 Edit:
 
 ```text
-src/autograder/config/config.properties
+src/config/config.properties
 ```
 
 The compile script copies this file into the application classes folder. Recompile after editing it so the next run uses the new values.
