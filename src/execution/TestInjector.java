@@ -20,6 +20,9 @@ public class TestInjector {
             return false;
         }
         File targetDir = new File(submission.getFolderPath());
+        //testerFileName is (Q1aTester.java, Q1bTester.java)
+        //tagetDir is student's question folder (e.g. temp/jiagu.wen.2025/Q1, temp/jiagu.wen.2025/Q2)
+        //temp folder has been created earlier in the pipeline
         return injectTesters(testerFileName, targetDir);
     }
 
