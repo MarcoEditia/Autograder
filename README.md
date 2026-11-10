@@ -58,6 +58,7 @@ Always run from the project root. Relative input and output paths resolve from t
 | --- | --- |
 | `student-submission/` | Input ZIP files, one per student. |
 | `Tester-Files/` | Instructor-controlled Java testers for the assessment. |
+| `RenameToYourUsername/` | The starter code given to students. Its lines are ignored by the similarity check. |
 | `clean-student-submission/` | Working copies extracted and prepared for grading. |
 | `reports/` | Generated HTML report and CSV scoresheet. |
 | `IS442-ScoreSheet.csv` | Provided roster/scoresheet template, when using template-based CSV export. |
@@ -91,7 +92,7 @@ src/config/config.properties
 
 The compile script copies this file into the application classes folder. Recompile after editing it so the next run uses the new values.
 
-The original project defines these settings:
+The following settings are defined:
 
 | Setting | Meaning |
 | --- | --- |
@@ -101,7 +102,13 @@ The original project defines these settings:
 | `GENERATED_REPORT_PATH` | Destination for generated reports. |
 | `SCORES_REPORT_FILENAME` | CSV output filename. |
 | `ANOMALY_REPORT_FILENAME` | HTML output filename. |
+| `STARTER_FILES_PATH` | Folder containing the starter code given to students. |
+| `SCORESHEET_TEMPLATE_PATH` | Provided CSV scoresheet template to fill in. |
+| `MAX_SCORE` | Maximum marks for the assessment. |
+| `PASS_MARK` | Passing mark, in marks (not a percentage). |
+| `SIMILARITY_THRESHOLD` | A pair of students above this similarity is flagged, as a fraction (`0.75` is 75%). |
 | `TIMEOUT` | Execution time limit in seconds for each tester process. |
+| `COMPILE_TIMEOUT` | Time limit in seconds for compiling one question part. |
 
 Example paths using the supplied layout:
 
@@ -109,21 +116,28 @@ Example paths using the supplied layout:
 TESTER_FILES_PATH=Tester-Files/
 STUDENT_SUBMISSION_PATH=student-submission/
 CLEAN_STUDENT_SUBMISSION_PATH=clean-student-submission/
+STARTER_FILES_PATH=RenameToYourUsername/
 GENERATED_REPORT_PATH=reports/
 SCORES_REPORT_FILENAME=scoresheet.csv
+SCORESHEET_TEMPLATE_PATH=IS442-ScoreSheet.csv
 ANOMALY_REPORT_FILENAME=anomaly_report.html
+MAX_SCORE = 20
+PASS_MARK = 10
+SIMILARITY_THRESHOLD = 0.75
+TIMEOUT = 10
+COMPILE_TIMEOUT = 15
 ```
 
 Choose a timeout suitable for the supplied tests and machine. A timeout means execution exceeded the limit; it does not by itself prove an infinite loop. Long limits also make batches with hanging submissions take longer.
 
-For the enhanced report, check the assessment maximum score, pass mark and similarity threshold exposed by your final `Config` implementation. The threshold uses a fraction, for example `0.75` for 75%. Set the maximum and pass mark in marks, not percentages. Use the exact property names read by your final `Config.java`; these additions were not present in the original uploaded configuration.
+The report uses `MAX_SCORE` and `PASS_MARK` for the passing rate. Set them in marks, not percentages.
 
 ## What happens during grading
 
 1. **Ingestion and cleaning:** extract each ZIP, validate its structure and record supported automatic corrections.
 2. **Testing:** inject the instructor tester, compile the affected question part and run the tester with a time limit.
-3. **Scoring:** collect per-question marks and the student's total.
-4. **Similarity checking:** compare unique pairs of student submissions.
+3. **Scoring:** read each tester's final score line and collect per-question marks and the student's total. A score that does not match the tester's number of `Passed` lines is set to 0.
+4. **Similarity checking:** remove the starter code lines, then compare unique pairs of student submissions.
 5. **Reporting:** export scores and explanations for instructor review.
 
 Grading proceeds sequentially. A background output reader captures the subprocess logs. Compilation failures and timeouts should allow the pipeline to continue to later question parts and students.
@@ -156,9 +170,9 @@ A timeout in one question part does not automatically imply zero for the student
 
 ### Similarity flags
 
-The basic engine compares sets of normalized source lines using Jaccard similarity. It removes comments, masks alphabetic text and removes whitespace before comparison.
+The basic engine compares sets of normalized source lines using Jaccard similarity. It removes comments, masks alphabetic text and removes whitespace before comparison. Lines that also appear in the starter code (`RenameToYourUsername/`) are removed first, and a submission with fewer than 5 lines of its own is not compared.
 
-Similarity is a review signal. Common starter code, short solutions and coarse normalization can produce high scores. Review both students' original work before reaching a conclusion. The percentage does not represent the percentage of code proven to be copied.
+Similarity is a review signal. Short solutions and coarse normalization can still produce high scores. Review both students' original work before reaching a conclusion. The percentage does not represent the percentage of code proven to be copied.
 
 ### CSV scoresheet
 
@@ -190,8 +204,9 @@ Adding more students to the same assessment only requires adding their ZIPs to t
 - Replace the instructor testers and any required input data.
 - Check the expected question folders and required source-file list in the cleaner.
 - Follow the naming convention used by the pipeline to select question folders and tester classes.
-- Ensure each tester prints its final numeric score on the last line, as expected by `Evaluator`.
-- Check maximum marks, pass mark, timeout and similarity threshold.
+- Ensure each tester prints `Passed` for each passed test, then its final numeric score on the last line. `Evaluator` gives 0 if that score does not equal the number of `Passed` lines.
+- Replace the starter code in `RenameToYourUsername/`.
+- Check maximum marks, pass mark, timeouts and similarity threshold.
 - Supply the correct roster template if using template-based export.
 - Run a known-correct submission and a deliberately failing submission before grading the cohort.
 
@@ -208,7 +223,7 @@ The current framework still depends on assessment-specific file conventions and 
 | A question cannot find its text input | Confirm the input file exists in the question folder and the subprocess uses that folder as its working directory. |
 | Compilation fails | Expand the compiler output in the report and inspect the affected cleaned source. |
 | Execution times out | Inspect the method and log. Check the limit against a known-correct solution. |
-| A score is unexpectedly zero | Check compilation, runtime errors, timeout flags and the tester's final numeric output. |
+| A score is unexpectedly zero | Check compilation, runtime errors, timeout flags and the tester's final numeric output. A score that does not match the number of `Passed` lines is also set to 0. |
 | Results contain old files | Clear the dedicated generated working folder before rerunning. |
 | A student is absent from the scoresheet | Check skipped submissions and, for template export, the username match. |
 
