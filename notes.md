@@ -1,6 +1,6 @@
-# Libraries Used
+# Potential Useful Libraries
 
-## Step 1 (Folder Arrangement)
+## Step 1 (Folder Arrangement):
 
 ### Validate submission structure
 
@@ -8,110 +8,98 @@
 
 - Unzips the submission
 
-#### java.nio.file
+#### java.io.File
 
-- Manages file paths and existence, copies files, and writes the cleaned submission
+- manage metadata and file existance, also writing on it
+- maybe can be used to write students name and email id incase they forgot to.
 
 ## Step 2 (Tester file)
 
-### Copy the tester files into the corresponding question folders
+### Tester files for each question and place them into the corresponding subfolders 
 
 #### java.nio.file
-
-- Copies the instructor's tester over any tester the student submitted, to prevent tampering
+ 
+- Copies Tester files into the corrsponding subfolder to prevent hardcoding
 
 ## Step 3 (Score Calculation)
 
 ### Safely terminate programs that exceed execution time
 
-#### java.lang.ProcessBuilder
+#### java.lang.ProcessBuilderProcess Isolation: 
+- Spawns external OS processes to programmatically run javac (compilation) and java (execution of tester classes).  
+- Crash & Exploit Protection: Prevents malicious or erroneous student code (e.g., System.exit(0)) from shutting down the autograder application.
+- Infinite Loop & Hang Termination: Enforces hard execution timeouts using process.waitFor(timeout, TimeUnit.SECONDS) and forcefully terminates hanging child processes via process.destroyForcibly() without blocking the grading run.  
+- Output & Error Capture: Reads standard output and error streams via process.getInputStream() and process.getErrorStream() to parse passed test cases, runtime exceptions, and compiler diagnostic messages.  
 
-- Process Isolation: runs `javac` (compilation) and `java` (execution of tester classes) as separate OS processes.
-- Crash & Exploit Protection: student code such as `System.exit(0)` cannot shut down the autograder.
-- Infinite Loop & Hang Termination: `process.waitFor(timeout, TimeUnit.SECONDS)` enforces the time limit, and `process.destroyForcibly()` kills hanging processes.
-- Output Capture: stderr is merged into stdout (`redirectErrorStream(true)`) and read by a background thread, so the output can be parsed.
+#### java.util.concurrent.ExecutorService (Optional / Concurrency)
+- Manages worker threads to batch-grade multiple submissions concurrently across CPU cores, delegating the actual OS process execution to ProcessBuilder.
 
-## Step 4 (Plagiarism Check)
+## Step 4 (Fill the Scoresheet)
 
-#### java.util (HashSet, HashMap)
+### Export grading results in the provided CSV format.
 
-- Each submission becomes a Set of normalised lines. Pairs are compared with Jaccard similarity.
+#### OpenCSV
 
-## Step 5 (Fill the Scoresheet and Report)
+- Library (.jar) to read and write csv in java
 
-#### CsvWriter (standard Java)
-
-- Reads the provided CSV template and writes each student's total into it
-
-#### HtmlFlow 5.0.4 + htmlApiFaster 1.0.17
-
-- Libraries (.jar in `lib/`) to build the HTML instructor report
-
-# Workflow: Unzip -> Validate structure -> Inject testers -> Compile and Run -> Score Calculation -> Plagiarism check -> Fill Scoresheet and Report
+# Workflow: Unzip -> Validate structure -> Score Calculation -> Fill Scoresheet | 10 Submission at a time |
 
 ``` txt
-└── Autograder/
+└── autograder-project/
 ├── compile.sh
 ├── run.sh
 ├── compile.bat
 ├── run.bat
+├── config.properties
 ├── README.md
-├── notes.md
-├── IS442-ScoreSheet.csv
-├── lib/
-├── RenameToYourUsername/
-├── Tester-Files/
-├── student-submission/
-├── clean-student-submission/
-├── reports/
+├── GX-TY.pptx
 ├── classes/
+├── lib/
+├── media/
 └── src/
+    ├── Main.java
     ├── analytics/
     │   └── PlagiarismEngine.java
-    ├── autograder/
-    │   ├── Main.java
-    │   ├── config/
-    │   │   ├── Config.java
-    │   │   └── config.properties
-    │   ├── execution/
-    │   │   ├── CompilationResult.java
-    │   │   ├── Compiler.java
-    │   │   ├── ProcessRunner.java
-    │   │   └── TestInjector.java
-    │   ├── pipeline/
-    │   │   └── GradingPipeline.java
-    │   ├── ui/
-    │   │   └── ProgressUI.java
-    │   └── util/
-    │       └── FileUtils.java
+    ├── config/
+    │   └── ConfigLoader.java
+    ├── execution/
+    │   ├── Compiler.java
+    │   ├── ProcessRunner.java
+    │   └── TestInjector.java
     ├── ingestion/
-    │   ├── IngestionResult.java
-    │   ├── SubmissionCleaner.java
-    │   └── ZipHandler.java
+    │   └── ZipService.java
     ├── io/
     │   └── CsvWriter.java
     ├── model/
     │   ├── Anomaly.java
+    │   ├── AnomalyType.java
     │   ├── FinalGrade.java
     │   ├── PlagiarismResult.java
-    │   ├── ProcessResult.java
     │   ├── QuestionScore.java
-    │   ├── ReportData.java
     │   └── Submission.java
+    ├── pipeline/
+    │   └── GradingPipeline.java
     ├── reporting/
-    │   ├── BaseReportBuilder.java
-    │   └── HtmlReportBuilder.java
-    └── scoring/
-        └── Evaluator.java
+    │   └── HtmlAnomalyBuilder.java
+    ├── scoring/
+    │   └── Evaluator.java
+    ├── ui/
+    │   ├── ConsoleCLI.java
+    │   └── InputValidator.java
+    └── validation/
+        ├── Sanitizer.java
+        └── Validator.java
 ```
 
 PROGRAM FLOW
-1. Initialization: `Main` opens the `ProgressUI` window, `Config` reads config.properties, and `Main` runs the `GradingPipeline`.
-2. Ingestion: for each ZIP, `GradingPipeline` calls `SubmissionCleaner`, which uses `ZipHandler` to unzip it, fixes folder and header problems, and records them as `Anomaly` objects in an `IngestionResult`. A ZIP that cannot be processed is skipped and listed in the report.
-3. Test Injection: for each question, `TestInjector` overwrites any student tester with the instructor's tester.
-4. Compilation: `Compiler` compiles that question's files into a `classes/` folder. A failure is recorded and the question scores 0.
-5. Execution: `ProcessRunner` runs the tester with the timeout from config and returns a `ProcessResult` containing all the output text. A timeout keeps the marks from tests that already passed and is flagged for review.
-6. Evaluation: `GradingPipeline` feeds the output into `Evaluator`. It reads the last line as the score, and gives 0 if that line is not a number or does not match the number of `Passed` lines. It returns a `QuestionScore`.
-7. Analytics: after all submissions are graded, `GradingPipeline` bundles every student's source code into a Map and passes it to `PlagiarismEngine.checkAll()`. It removes the starter code lines, compares every pair and returns a list of `PlagiarismResult`s.
-8. Export: `GradingPipeline` hands the grades and plagiarism results to `CsvWriter` and `HtmlReportBuilder` to generate the final files.
-9. UI: throughout, `GradingPipeline` sends status updates to `ProgressUI`, which shows a progress bar.
+1. Initialization: Member 1's `Main` starts the app. `ConfigLoader` reads config.properties, and `Main` boots up the `GradingPipeline`.
+2. Ingestion: `GradingPipeline` calls Member 2's `ZipService` to unzip the massive batch of student submissions.
+3. Validation & Sanitization: `GradingPipeline` passes the folder paths to Member 2's `Validator` and `Sanitizer`, wrapping valid folders into clean `Submission` objects.
+4. Test Injection: `GradingPipeline` loops through the `Submission` objects and sends them to Member 3's `TestInjector` to overwrite any student tester files with the professor's master tester files.
+5. Compilation: `GradingPipeline` passes the `Submission` to Member 3's `Compiler`, which compiles the `.java` files into a `classes/` folder.
+6. Execution: `GradingPipeline` constructs the terminal command (e.g., `["java", "Q1aTester"]`) and passes it to Member 3's `ProcessRunner.run()`. The runner executes the code, captures all `stdout`, and returns a `ProcessResult` object containing that raw text.
+7. Evaluation: `GradingPipeline` takes the raw output string from `ProcessResult` and feeds it into Member 4's `Evaluator`. The Evaluator parses the text and returns a `QuestionScore` object.
+8. Analytics: After all submissions are evaluated, `GradingPipeline` bundles every student's raw source code into a Map and passes it to Member 4's `PlagiarismEngine.checkAll()`, which returns a list of `PlagiarismResult`s.
+9. Export: `GradingPipeline` hands the compiled scores and plagiarism results to Member 5's `CsvWriter` and `HtmlAnomalyBuilder` to generate the final files.
+10. UI Wrapping: Throughout steps 1–9, Member 6's `ConsoleCLI` receives status updates from `GradingPipeline` and renders a clean progress bar to the user.
+
