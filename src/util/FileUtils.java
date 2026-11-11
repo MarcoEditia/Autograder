@@ -32,6 +32,7 @@ public class FileUtils {
             return stream
                     .filter(path -> !path.equals(directory))
                     .filter(Files::isRegularFile)
+                    .filter(path -> !isMacOsMetadata(path))
                     .map(mapper)
                     .collect(Collectors.toList());
         }
@@ -47,11 +48,25 @@ public class FileUtils {
         }
     }
 
+    private static boolean isMacOsMetadata(Path path) {
+        for (Path part : path) {
+            String name = part.toString();
+
+            if (name.equals(".DS_Store")
+                    || name.equals("__MACOSX")
+                    || name.startsWith("._")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static <T> List<T> listDirectory(Path directory, Function<Path, T> mapper, int depth) throws IOException {
         try (Stream<Path> stream = Files.walk(directory, depth)) {
             return stream
                     .filter(path -> !path.equals(directory))
                     .filter(Files::isDirectory)
+                    .filter(path -> !isMacOsMetadata(path))
                     .map(mapper)
                     .collect(Collectors.toList());
         }
