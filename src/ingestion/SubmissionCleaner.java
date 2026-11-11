@@ -1,7 +1,6 @@
 package ingestion;
 
 import model.Anomaly;
-import util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
