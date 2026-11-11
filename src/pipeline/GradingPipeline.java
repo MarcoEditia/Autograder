@@ -43,13 +43,15 @@ public class GradingPipeline {
 
     public void run() {
         try {
+            List<String> expected_question_directories = FileUtils.listDirectories(config.getStarterFilesPath(), 1);
+            List<String> expected_source_files = FileUtils.listFilePaths(config.getStarterFilesPath(), 2);
+            
             List<Path> zipFiles = FileUtils.listFilePaths(config.getStudentSubmissionPath());
             List<Anomaly> anomalyList = new ArrayList<>();
             List<FinalGrade> grades = new ArrayList<>();
             Map<String, String> codeById = new HashMap<>();
             List<String> skippedSubmissions = new ArrayList<>();
             File[] testerFiles = testerFilesFolder.listFiles();
-            
             if (testerFiles == null) throw new IOException("Cannot read the tester folder");
             // Sort 
             Arrays.sort(
@@ -81,7 +83,7 @@ public class GradingPipeline {
 
                 try {
                 // ============ Ingestion ============
-                IngestionResult ingestionResult = SubmissionCleaner.processSubmission(zip, config.getCleanStudentSubmissionPath());
+                IngestionResult ingestionResult = SubmissionCleaner.processSubmission(zip, config.getCleanStudentSubmissionPath(), expected_question_directories, expected_source_files);
                 ProgressUI.onUnzipSuccess();
                 ProgressUI.onStudentIdKnown(ingestionResult.getStudentId());
 
