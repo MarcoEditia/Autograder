@@ -67,7 +67,7 @@ The application starts grading immediately when launched. The Swing window shows
 | --- | --- |
 | `student-submission/` | Input student ZIPs. |
 | `Tester-Files/` | Official Java testers, such as `Q1aTester.java`. |
-| `RenameToYourUsername/` | Original starter resources used to remove shared starter lines from similarity comparisons. |
+| `RenameToYourUsername/` | Reference structure for validation and original starter sources for similarity filtering. |
 | `IS442-ScoreSheet.csv` | Input roster template. Keep this separate from generated output. |
 | `clean-student-submission/` | Extracted working copies, injected testers and compiled question classes. |
 | `reports/` | Generated HTML, CSV and, when needed, skipped-submissions log. |
@@ -93,12 +93,23 @@ alex.goh.2024.zip
 
 The application derives the ID from the final filename segment after a hyphen or underscore, excluding `.zip`. Other ZIP filenames can still be extracted, but their derived IDs must match the CSV roster for marks to be exported correctly.
 
-Submissions normally contain `Q1`, `Q2` and `Q3` inside a username folder. Supported incorrect root-folder names and missing username folders are handled automatically. The current assessment expects:
+Submissions normally contain question folders inside a username folder. Supported incorrect root-folder names and missing username folders are handled automatically.
+
+Required folders and files are discovered from the reference folder selected by `STARTER_FILES_PATH`, rather than fixed lists in the Java code:
+
+- Immediate subfolders become required question folders.
+- Files at the reference root or directly inside those folders become required files, including supplied support `.class` files.
+- macOS metadata (`.DS_Store`, `._*` and `__MACOSX`) is ignored during this discovery.
+- Deeper nested files are not included in required-file validation.
+
+Keep the reference folder faithful to the original assessment resources. Only files present there become required; do not add instructor-only test data as a student requirement.
+
+The supplied reference uses:
 
 | Folder | Required files |
 | --- | --- |
 | `Q1/` | `Q1a.java`, `Q1b.java` |
-| `Q2/` | `Q2a.java`, `Q2b.java`, `persons.txt`, `personstester.txt`, `students.txt`, `studentstester.txt` |
+| `Q2/` | `Q2a.java`, `Q2b.java`, `persons.txt`, `students.txt` |
 | `Q3/` | `Q3.java`, `ShapeComparator.java` |
 
 Retain required support classes, including the supplied Q3 shape classes and Q2 `DataException.class`.
@@ -131,10 +142,10 @@ Edit `src/config/config.properties`, then rerun the compile script. Relative pat
 | `TESTER_FILES_PATH` | `Tester-Files/` | Official tester folder. |
 | `STUDENT_SUBMISSION_PATH` | `student-submission/` | Input ZIP folder. |
 | `CLEAN_STUDENT_SUBMISSION_PATH` | `clean-student-submission/` | Extracted working folder. |
-| `STARTER_FILES_PATH` | `RenameToYourUsername/` | Starter source folder for similarity filtering. |
+| `STARTER_FILES_PATH` | `RenameToYourUsername/` | Reference layout for required-file discovery and starter sources for similarity filtering. |
 | `GENERATED_REPORT_PATH` | `reports/` | Output folder. |
 | `SCORES_REPORT_FILENAME` | `scoresheet.csv` | Output CSV filename. |
-| `SCORESHEET_TEMPLATE_PATH` | `./IS442-ScoreSheet.csv` | Input roster template. |
+| `SCORESHEET_TEMPLATE_PATH` | `IS442-ScoreSheet.csv` | Input roster template. |
 | `ANOMALY_REPORT_FILENAME` | `anomaly_report.html` | Output HTML filename. |
 | `MAX_SCORE` | `20` | Assessment maximum displayed in reports. |
 | `PASS_MARK` | `10` | Passing mark; a score equal to this value passes. |
@@ -142,6 +153,8 @@ Edit `src/config/config.properties`, then rerun the compile script. Relative pat
 | `TIMEOUT` | `10` | Execution limit in seconds per tester process. |
 
 Maximum score and pass mark are in marks. Similarity threshold is a fraction from 0 to 1. Updating `MAX_SCORE` does not change the tester's marking rules or the CSV template's denominator; keep all three consistent.
+
+No additional configuration key is needed for folder discovery. Set `STARTER_FILES_PATH` to the assessment's reference folder; the folder's contents determine the required structure.
 
 The CSV output path must differ from the template path. The exporter rejects attempts to overwrite the template at the same normalized path.
 
@@ -212,7 +225,7 @@ The engine combines a student's Java source, excluding filenames ending in `Test
 
 A pair is flagged only when its score exceeds `SIMILARITY_THRESHOLD`. The HTML report deduplicates pairs and shows them for both participating students.
 
-If starter files cannot be read, the engine prints a message and continues without starter-line removal. Check this message when similarity results are unexpectedly high.
+The reference folder must exist and be readable before grading starts because the pipeline uses it for structure discovery. If it becomes unreadable later during similarity checking, the engine prints a message and continues without starter-line removal.
 
 Similarity is a signal for review, not proof of plagiarism. The normalization is coarse and sets discard order and repeated lines. Shared solution patterns can raise scores; a student with too few remaining lines may not be compared. A “not flagged” result is not a guarantee of originality.
 
@@ -230,15 +243,15 @@ Similarity is a signal for review, not proof of plagiarism. The normalization is
 More students for the same assessment require additional ZIPs and matching roster rows. A different assessment also requires adapting its resources and rules:
 
 - Supply matching official testers whose filenames end in `Tester.java`.
-- Review the expected folders and required files in `SubmissionCleaner`.
-- Review the pipeline's question-folder mapping: it currently takes the first two characters of the tester filename, matching `Q1`, `Q2` and `Q3`.
+- Prepare the required folders and files in the configured starter reference. Validation discovers them automatically; keep question folders directly inside the reference root.
+- Keep the `Q<number>` convention for question folders. The pipeline reads the leading Q-number from the tester name: `Q1aTester.java` maps to `Q1`, and `Q10aTester.java` maps to `Q10`. Arbitrary names such as `Task1` are not supported automatically.
 - Keep each tester's final numeric score consistent with its number of `Passed` lines. Weighted tests require a change to the evaluator and timeout partial-mark logic.
 - Supply required input data and helper classes.
 - Update the original starter sources used for similarity filtering.
 - Set the maximum mark, pass mark, timeout and similarity threshold, and update the roster denominator.
 - Check a known-correct submission, a failing submission and a timeout case before grading the cohort.
 
-This version uses assessment-specific naming and required-file conventions. Changing configuration paths alone does not configure every part of a new assessment.
+The required structure is reference-driven, but tester naming and scoring still follow the conventions above. Changing the reference folder alone does not make every assessment compatible.
 
 ## 11. Troubleshooting
 
