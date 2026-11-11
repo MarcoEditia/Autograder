@@ -456,6 +456,7 @@ public class HtmlReportBuilder extends BaseReportBuilder {
             case MISSING_SOURCE_FILE: return "File missing";
             case EXECUTION_TIMEOUT: return "Execution timeout";
             case RUNTIME_ERROR: return "Runtime error";
+            case UNMODIFIED_TEMPLATE: return "Unmodified template";
             default: return a.getType().getLabel();
         }
     }
@@ -469,6 +470,7 @@ public class HtmlReportBuilder extends BaseReportBuilder {
             return "Check the original ZIP for a missing or misplaced file before confirming the marks.";
         if (type == Anomaly.Type.EXECUTION_TIMEOUT) return "Inspect the affected method for non-termination and check any completed tests for partial marks.";
         if (type == Anomaly.Type.RUNTIME_ERROR) return "Inspect the recorded runtime message and the affected question.";
+        if (type == Anomaly.Type.UNMODIFIED_TEMPLATE) return "Compare the source with the provided starter files.";
         return "Check the recorded details against the original submission.";
     }
     private static String issueLabel(Anomaly.Type type) {
@@ -479,6 +481,7 @@ public class HtmlReportBuilder extends BaseReportBuilder {
             case FLATTENED_HIERARCHY -> "Missing username folder";
             case MISSING_QUESTION_FOLDER -> "Missing question folder";
             case MISSING_SOURCE_FILE -> "Missing Java file";
+            case UNMODIFIED_TEMPLATE -> "Unmodified template";
             case COMPILATION_FAILURE -> "Compilation failed";
             case EXECUTION_TIMEOUT -> "Execution timeout";
             case RUNTIME_ERROR -> "Runtime error";

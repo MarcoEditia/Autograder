@@ -12,6 +12,7 @@ public final class Config {
     private final Path testerFilesPath;
     private final Path studentSubmissionPath;
     private final Path cleanStudentSubmissionPath;
+    private final Path starterFilesPath;
 
     private final Path generatedReportPath;
     private final String scoresReportFilename;
@@ -30,6 +31,7 @@ public final class Config {
         this.testerFilesPath = getPath(configProperties, "TESTER_FILES_PATH");
         this.studentSubmissionPath = getPath(configProperties, "STUDENT_SUBMISSION_PATH");
         this.cleanStudentSubmissionPath = getPath(configProperties, "CLEAN_STUDENT_SUBMISSION_PATH");
+        this.starterFilesPath = getPath(configProperties, "STARTER_FILES_PATH");
 
         this.generatedReportPath = getPath(configProperties, "GENERATED_REPORT_PATH");
         this.scoresReportFilename = getString(configProperties, "SCORES_REPORT_FILENAME");
@@ -111,6 +113,10 @@ public final class Config {
 
     public Path getStudentSubmissionPath() {
         return studentSubmissionPath;
+    }
+
+    public Path getStarterFilesPath() {
+        return starterFilesPath;
     }
 
     public Path getCleanStudentSubmissionPath() {

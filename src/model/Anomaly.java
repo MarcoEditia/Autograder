@@ -20,6 +20,7 @@ public final class Anomaly {
         MISSING_QUESTION_FOLDER("Missing Question Directory", Severity.ERROR),
         MISSING_SOURCE_FILE("Missing Java Source File", Severity.ERROR),
         MISSING_HEADER("Missing or Malformed Header Comment", Severity.WARNING),
+        UNMODIFIED_TEMPLATE("Unmodified Resource Folder Submitted", Severity.WARNING),
 
         // Compilation & Execution issues
         COMPILATION_FAILURE("Java Compilation Failed", Severity.ERROR),
