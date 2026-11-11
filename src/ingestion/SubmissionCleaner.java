@@ -23,21 +23,6 @@ public final class SubmissionCleaner {
             "(?m)^[ \\t]*\\*?[ \\t]*Email ID[ \\t]*:[ \\t]*(.*?)[ \\t]*$"
     );
 
-    // Expected exam structure
-    private static final List<String> EXPECTED_QUESTION_DIRECTORIES = List.of("Q1", "Q2", "Q3");
-    private static final List<String> EXPECTED_SOURCE_FILES = List.of(
-            "Q1/Q1a.java",
-            "Q1/Q1b.java",
-            "Q2/Q2a.java",
-            "Q2/Q2b.java",
-            "Q2/persons.txt",
-            "Q2/personstester.txt",
-            "Q2/students.txt",
-            "Q2/studentstester.txt",
-            "Q3/Q3.java",
-            "Q3/ShapeComparator.java"
-    );
-
     private SubmissionCleaner() {
         // Utility class
     }
@@ -45,7 +30,7 @@ public final class SubmissionCleaner {
     /**
      * Executes the entire ingestion pipeline: inspects, extracts, detects anomalies, and repairs headers.
      */
-    public static IngestionResult processSubmission(Path zipFilePath, Path targetDirectory) throws IOException {
+    public static IngestionResult processSubmission(Path zipFilePath, Path targetDirectory, List<String> listSourceFolder, List<String> listSourceFile) throws IOException {
         String studentId = extractStudentId(zipFilePath);
         String studentName = inferStudentName(studentId);
 
@@ -60,7 +45,7 @@ public final class SubmissionCleaner {
         ZipHandler.unzip(zipFilePath, studentDirectory, anomalies);
 
         // Inspect missing directories and required source files
-        anomalies.addAll(validateRequiredFiles(studentDirectory, studentId));
+        anomalies.addAll(validateRequiredFiles(studentDirectory, studentId, listSourceFolder,listSourceFile));
 
         // Inspect headers, record anomalies, and clean/inject standard headers
         anomalies.addAll(inspectAndSanitizeHeaders(studentDirectory, studentId, studentName));
@@ -78,10 +63,10 @@ public final class SubmissionCleaner {
         return parts[parts.length - 1].trim();
     }
 
-    private static List<Anomaly> validateRequiredFiles(Path studentDirectory, String studentId) {
+    private static List<Anomaly> validateRequiredFiles(Path studentDirectory, String studentId, List<String> listSourceFolder, List<String> listSourceFile) {
         List<Anomaly> anomalies = new ArrayList<>();
         
-        for (String questionDirName : EXPECTED_QUESTION_DIRECTORIES) {
+        for (String questionDirName : listSourceFolder) {
             Path questionDirPath = studentDirectory.resolve(questionDirName);
             if (!Files.isDirectory(questionDirPath)) {
                 anomalies.add(new Anomaly(
@@ -92,7 +77,7 @@ public final class SubmissionCleaner {
             }
         }
 
-        for (String sourceFile : EXPECTED_SOURCE_FILES) {
+        for (String sourceFile : listSourceFile) {
             Path sourcefilePath = studentDirectory.resolve(sourceFile);
             if (!Files.isRegularFile(sourcefilePath)) {
                 anomalies.add(new Anomaly(
