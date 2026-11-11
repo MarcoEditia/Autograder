@@ -25,6 +25,8 @@ import reporting.HtmlReportBuilder;
 import scoring.Evaluator;
 import ui.ProgressUI;
 import util.FileUtils;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GradingPipeline {
     private final Config config;
@@ -136,10 +138,26 @@ public class GradingPipeline {
                 for (File testerFile : testerFiles) {
                     if (!testerFile.isFile() || !testerFile.getName().endsWith("Tester.java")) continue;
 
-                    File questionDir = new File(submission.getFolderPath(), testerFile.getName().substring(0, 2));
-                    // The name part of the tester files and the submission files (e.g. Q1a, QlaTester)
-                    String testerFileName = testerFile.getName().replace(".java", "");
-                    String questionName = testerFileName.replace("Tester", "");
+                    String testerFileName =
+                            testerFile.getName().replace(".java", "");
+
+                    String questionName =
+                            testerFileName.replace("Tester", "");
+
+                    Matcher folderMatcher =
+                            Pattern.compile("^(Q\\d+)").matcher(questionName);
+
+                    if (!folderMatcher.find()) {
+                        throw new IOException(
+                                "Unsupported tester name: " + testerFile.getName()
+                                + ". Expected a name such as Q1aTester.java."
+                        );
+                    }
+
+                    File questionDir = new File(
+                            submission.getFolderPath(),
+                            folderMatcher.group(1)
+                    );
 
                     if (!new File(questionDir, questionName + ".java").isFile()){
                         grade.addQuestionScore(new QuestionScore(questionName, 0.0));
